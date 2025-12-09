@@ -1,0 +1,53 @@
+name: Auto Deploy to GitHub
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        extensions: mysqli, pdo, pdo_mysql
+        
+    - name: Validate PHP syntax
+      run: |
+        find . -name "*.php" -not -path "./vendor/*" -not -path "./node_modules/*" -exec php -l {} \;
+        
+    - name: Check file permissions
+      run: |
+        echo "Checking project structure..."
+        ls -la
+        
+    - name: Create deployment summary
+      run: |
+        echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- PHP Version: $(php -v | head -n 1)" >> $GITHUB_STEP_SUMMARY
+        echo "- Deployment Time: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "- Branch: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: php-files
+        path: |
+          *.php
+          **/*.php
+        retention-days: 30
+

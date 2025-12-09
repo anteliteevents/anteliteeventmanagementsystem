@@ -1,0 +1,277 @@
+.event-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.event-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.btn-back {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-back:hover {
+  color: #0056b3;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-edit,
+.btn-delete {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.2s;
+}
+
+.btn-edit {
+  background: #007bff;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #0056b3;
+}
+
+.btn-delete {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.btn-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.event-detail-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.event-main {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.event-title-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.event-title-section h1 {
+  margin: 0;
+  color: #333;
+  flex: 1;
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-draft {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.status-published {
+  background: #cfe2ff;
+  color: #084298;
+}
+
+.status-active {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status-completed {
+  background: #d0d0d0;
+  color: #333;
+}
+
+.status-cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.event-description {
+  margin-bottom: 2rem;
+}
+
+.event-description h3 {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.event-description p {
+  color: #666;
+  line-height: 1.6;
+}
+
+.event-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.info-item label {
+  display: block;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.info-item p {
+  margin: 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.event-actions {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.event-statistics {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 2rem;
+  height: fit-content;
+}
+
+.event-statistics h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.stats-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.stat-item {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.stat-revenue {
+  background: #e7f3ff;
+  border: 2px solid #007bff;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #007bff;
+  margin-bottom: 0.5rem;
+}
+
+.stat-revenue .stat-value {
+  color: #0056b3;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.loading,
+.error-message {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .event-detail-content {
+    grid-template-columns: 1fr;
+  }
+
+  .event-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .event-detail-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+}
+

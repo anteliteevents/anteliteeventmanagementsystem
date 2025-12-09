@@ -1,0 +1,2 @@
+"Prioritize interactive floor plans with drag-select booths, role-based dashboards (admin/exhibitor), automated invoicing. Reference architecture: modular APIs, REST endpoints for /booths/available, /exhibitors/register."
+Reference these in prompts: "@global.mdc Build exhibitor portal." Keep rules under 500 lines, focused on tech stack from prior ideas.

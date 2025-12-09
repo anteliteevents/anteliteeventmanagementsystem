@@ -1,0 +1,24 @@
+{
+  "name": "proposals",
+  "version": "1.0.0",
+  "description": "Proposal creation, templates, and approval workflow management",
+  "events": [
+    "proposal.created",
+    "proposal.submitted",
+    "proposal.approved",
+    "proposal.rejected",
+    "proposal.sent"
+  ],
+  "dbTables": [
+    "proposals",
+    "proposal_templates"
+  ],
+  "apiRoutes": [
+    "/api/proposals/*"
+  ],
+  "dependencies": [
+    "authentication",
+    "database",
+    "events"
+  ]
+}

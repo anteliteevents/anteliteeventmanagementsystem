@@ -1,0 +1,1 @@
+"Use React for frontend, Node.js/Express for backend, PostgreSQL schema with tables for events, exhibitors, booths (id, size, price, status), and transactions. Implement JWT auth, Stripe payments, real-time booth availability via Socket.io."

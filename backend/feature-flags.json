@@ -1,0 +1,64 @@
+[
+  {
+    "name": "authentication",
+    "enabled": true,
+    "description": "User authentication system"
+  },
+  {
+    "name": "database",
+    "enabled": true,
+    "description": "Database connectivity"
+  },
+  {
+    "name": "sales",
+    "enabled": true,
+    "description": "Sales management module",
+    "module": "sales"
+  },
+  {
+    "name": "costing",
+    "enabled": true,
+    "description": "Cost tracking module",
+    "module": "costing"
+  },
+  {
+    "name": "proposals",
+    "enabled": true,
+    "description": "Proposal creation module",
+    "module": "proposals"
+  },
+  {
+    "name": "monitoring",
+    "enabled": true,
+    "description": "Sales team monitoring module",
+    "module": "monitoring"
+  },
+  {
+    "name": "policies",
+    "enabled": false,
+    "description": "Policy management module",
+    "module": "policies"
+  },
+  {
+    "name": "payments",
+    "enabled": true,
+    "description": "Payment gateway integration",
+    "module": "payments"
+  },
+  {
+    "name": "gpsTracking",
+    "enabled": false,
+    "description": "GPS tracking feature"
+  },
+  {
+    "name": "realTimeUpdates",
+    "enabled": true,
+    "description": "Real-time WebSocket updates"
+  },
+  {
+    "name": "svgFloorPlan",
+    "enabled": true,
+    "description": "Interactive SVG floor plan",
+    "module": "sales"
+  }
+]

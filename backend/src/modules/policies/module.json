@@ -1,0 +1,21 @@
+{
+  "name": "policies",
+  "version": "1.0.0",
+  "description": "Policy management, terms & conditions, and compliance",
+  "events": [
+    "policy.created",
+    "policy.updated",
+    "policy.activated",
+    "policy.deactivated"
+  ],
+  "dbTables": [
+    "policies"
+  ],
+  "apiRoutes": [
+    "/api/policies/*"
+  ],
+  "dependencies": [
+    "authentication",
+    "database"
+  ]
+}

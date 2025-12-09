@@ -1,0 +1,51 @@
+{
+  "name": "antelite-events-frontend",
+  "version": "1.0.0",
+  "description": "Frontend application for Ant Elite Events System",
+  "private": true,
+  "dependencies": {
+    "@stripe/react-stripe-js": "^2.4.0",
+    "@stripe/stripe-js": "^2.1.11",
+    "ajv": "^8.17.1",
+    "axios": "^1.6.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-query": "^3.39.3",
+    "react-router-dom": "^6.20.0",
+    "socket.io-client": "^4.5.4"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "@types/node": "^20.10.4",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "react-scripts": "5.0.1",
+    "typescript": "^5.3.3"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

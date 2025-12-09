@@ -1,0 +1,357 @@
+/**
+ * Modern Reports & Analytics View
+ * Fully responsive dashboard
+ */
+
+@import './shared-components.css';
+
+.reports-view {
+  padding: 0;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.view-header {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-content h2 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.header-content p {
+  margin: 0;
+  color: #666;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.period-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-export {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-export:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  transition: transform 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.metric-card.revenue {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.metric-card.events {
+  border-left: 4px solid #28a745;
+}
+
+.metric-card.booths {
+  border-left: 4px solid #ffc107;
+}
+
+.metric-card.performance {
+  border-left: 4px solid #17a2b8;
+}
+
+.metric-icon {
+  font-size: 3rem;
+  flex-shrink: 0;
+}
+
+.metric-content {
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.metric-card.revenue .metric-label {
+  opacity: 0.9;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.metric-card.revenue .metric-value {
+  color: white;
+}
+
+.metric-change {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
+
+.metric-card.revenue .metric-change {
+  opacity: 0.9;
+}
+
+.metric-change.positive {
+  color: #28a745;
+}
+
+.metric-card.revenue .metric-change.positive {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.charts-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.chart-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.view-details-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.view-details-link:hover {
+  color: #764ba2;
+}
+
+.chart-placeholder {
+  height: 300px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-message {
+  text-align: center;
+  color: #666;
+}
+
+.chart-message small {
+  display: block;
+  margin-top: 0.5rem;
+  color: #999;
+}
+
+.reports-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.report-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.report-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.btn-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.btn-link:hover {
+  color: #764ba2;
+}
+
+.report-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.report-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.report-label {
+  color: #666;
+  font-weight: 600;
+}
+
+.report-value {
+  color: #333;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.report-value.success {
+  color: #28a745;
+}
+
+.report-value.warning {
+  color: #ffc107;
+}
+
+.quick-actions {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quick-actions h3 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.action-card {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.action-card:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  border-color: #667eea;
+}
+
+.action-card:hover .action-icon,
+.action-card:hover .action-label {
+  color: white;
+}
+
+.action-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.action-label {
+  color: #333;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+@media (max-width: 768px) {
+  .view-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .metrics-grid,
+  .charts-section,
+  .reports-section {
+    grid-template-columns: 1fr;
+  }
+}
+

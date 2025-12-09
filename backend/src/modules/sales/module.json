@@ -1,0 +1,25 @@
+{
+  "name": "sales",
+  "version": "1.0.0",
+  "description": "Sales management module with interactive floor plans and booth booking",
+  "events": [
+    "boothBooked",
+    "boothReserved",
+    "boothReleased",
+    "boothStatusChanged"
+  ],
+  "dbTables": [
+    "booths",
+    "reservations",
+    "sales",
+    "floor_plans"
+  ],
+  "apiRoutes": [
+    "/api/sales/*"
+  ],
+  "dependencies": [
+    "authentication",
+    "database"
+  ]
+}
+

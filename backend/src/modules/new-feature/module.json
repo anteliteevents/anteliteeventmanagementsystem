@@ -1,0 +1,12 @@
+{
+  "name": "new-feature",
+  "version": "1.0.0",
+  "description": "Placeholder for future modules",
+  "events": [],
+  "dbTables": [],
+  "apiRoutes": [
+    "/api/new-feature/*"
+  ],
+  "dependencies": []
+}
+

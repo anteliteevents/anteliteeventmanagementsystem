@@ -1,0 +1,21 @@
+{
+  "name": "monitoring",
+  "version": "1.0.0",
+  "description": "Sales team monitoring, performance metrics, and analytics",
+  "events": [
+    "metric.recorded",
+    "activity.logged",
+    "performance.alert"
+  ],
+  "dbTables": [
+    "monitoring_metrics",
+    "team_activity"
+  ],
+  "apiRoutes": [
+    "/api/monitoring/*"
+  ],
+  "dependencies": [
+    "authentication",
+    "database"
+  ]
+}

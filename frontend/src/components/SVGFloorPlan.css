@@ -1,0 +1,144 @@
+.svg-floor-plan-container {
+  width: 100%;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.floor-plan-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.floor-plan-header h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.floor-plan-header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.svg-floor-plan {
+  width: 100%;
+  height: auto;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+  margin-bottom: 1.5rem;
+}
+
+.booth-group {
+  transition: all 0.2s ease;
+}
+
+.booth-group:hover .booth-rect {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+  transform-origin: center;
+}
+
+.booth-group.selected .booth-rect {
+  filter: brightness(1.2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.booth-rect {
+  transition: all 0.2s ease;
+}
+
+.booth-number {
+  pointer-events: none;
+  user-select: none;
+}
+
+.booth-price {
+  pointer-events: none;
+  user-select: none;
+}
+
+.booth-size {
+  pointer-events: none;
+  user-select: none;
+}
+
+.floor-plan-legend {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.selected-booth-info {
+  background: #e7f3ff;
+  border: 2px solid #4A90E2;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.selected-booth-info h4 {
+  margin: 0 0 1rem 0;
+  color: #2E5C8A;
+}
+
+.selected-booth-info p {
+  margin: 0.5rem 0;
+  color: #555;
+}
+
+.btn-book-booth {
+  margin-top: 1rem;
+  padding: 0.75rem 2rem;
+  background: #4A90E2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-book-booth:hover {
+  background: #2E5C8A;
+}
+
+@media (max-width: 768px) {
+  .svg-floor-plan-container {
+    padding: 1rem;
+  }
+
+  .floor-plan-legend {
+    gap: 1rem;
+  }
+}
+

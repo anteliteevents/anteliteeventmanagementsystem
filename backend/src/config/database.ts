@@ -3,30 +3,30 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const useSSL = (process.env.DB_SSL || 'true').toLowerCase() !== 'false';
+const useSSL = (process.env.DB_SSL || 'false').toLowerCase() !== 'false';
 
-// Prefer full connection string if provided (e.g., Supabase with sslmode=require)
-const connectionString = process.env.DATABASE_URL;
+// Prefer individual connection parameters over connection string to avoid URL encoding issues
+// This is more reliable when passwords contain special characters
+const poolConfig: PoolConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME || 'antelite_events',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || '',
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000, // Increased timeout for remote connections
+  ssl: useSSL ? { rejectUnauthorized: false } : false,
+};
 
-const poolConfig: PoolConfig = connectionString
-  ? {
-      connectionString,
-      ssl: useSSL ? { rejectUnauthorized: false } : false,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    }
-  : {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      database: process.env.DB_NAME || 'antelite_events',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || '',
-      max: 20, // Maximum number of clients in the pool
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-      ssl: useSSL ? { rejectUnauthorized: false } : false,
-    };
+// Only use DATABASE_URL if individual params are not set
+if (process.env.DATABASE_URL && !process.env.DB_HOST) {
+  poolConfig.connectionString = process.env.DATABASE_URL;
+  // Override ssl setting from connection string
+  if (poolConfig.connectionString) {
+    poolConfig.ssl = useSSL ? { rejectUnauthorized: false } : false;
+  }
+}
 
 const pool = new Pool(poolConfig);
 
@@ -38,6 +38,16 @@ pool.on('connect', () => {
 pool.on('error', (err) => {
   console.error('❌ Unexpected error on idle client', err);
   process.exit(-1);
+});
+
+// Log connection config (without password)
+console.log('🔌 Database Config:', {
+  host: poolConfig.host,
+  port: poolConfig.port,
+  database: poolConfig.database,
+  user: poolConfig.user,
+  ssl: poolConfig.ssl,
+  hasPassword: !!poolConfig.password
 });
 
 export default pool;

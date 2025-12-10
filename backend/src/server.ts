@@ -32,12 +32,35 @@ const allowedOrigins = (process.env.CORS_ORIGIN || [
   'http://localhost:3000',
   'https://anteliteeventssystem-2s8af5wgz-anteliteevents-projects.vercel.app',
   'https://anteliteeventssystem.vercel.app'
-].join(',')).split(',').map(o => o.trim());
+].join(','))
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+app.use((req, res, next) => {
+  const origin = req.header('Origin');
+  const isAllowed = !origin || allowedOrigins.includes(origin);
+
+  if (isAllowed) {
+    res.header('Access-Control-Allow-Origin', origin || allowedOrigins[0]);
+    res.header('Vary', 'Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    res.header(
+      'Access-Control-Allow-Headers',
+      req.header('Access-Control-Request-Headers') ||
+        'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    );
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    return next();
+  }
+
+  return res.status(403).send('CORS Forbidden');
+});
+
 app.use(helmet());
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
 
 // Stripe webhook route - must be before express.json() to receive raw body
 app.use('/api/webhooks', express.raw({ type: 'application/json' }), stripeWebhookRoutes);

@@ -22,6 +22,12 @@
     "module": "costing"
   },
   {
+    "name": "events",
+    "enabled": true,
+    "description": "Events module",
+    "module": "events"
+  },
+  {
     "name": "proposals",
     "enabled": true,
     "description": "Proposal creation module",
@@ -35,7 +41,7 @@
   },
   {
     "name": "policies",
-    "enabled": false,
+    "enabled": true,
     "description": "Policy management module",
     "module": "policies"
   },

@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS proposals (
     submitted_at TIMESTAMP,
     approved_by UUID REFERENCES users(id),
     approved_at TIMESTAMP,
+    rejected_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

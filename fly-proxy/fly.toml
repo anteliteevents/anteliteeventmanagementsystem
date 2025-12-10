@@ -1,0 +1,15 @@
+app = "antelite-pg-proxy"
+primary_region = "sin"
+
+[build]
+
+[env]
+
+[[services]]
+  internal_port = 5432
+  protocol = "tcp"
+  
+  [[services.ports]]
+    port = 5432
+    handlers = ["tls", "http"]
+

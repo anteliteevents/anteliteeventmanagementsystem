@@ -58,8 +58,7 @@ class PaymentService {
           boothId: reservation.booth_id,
           eventId: reservation.event_id,
           exhibitorId: reservation.exhibitor_id,
-        },
-        receipt_email: reservation.email,
+        }
       });
 
       // Create transaction record
@@ -91,7 +90,7 @@ class PaymentService {
         amount,
         currency,
         status: paymentIntent.status,
-        clientSecret: paymentIntent.client_secret,
+        clientSecret: paymentIntent.client_secret || undefined,
       };
     } catch (error: any) {
       console.error('Error creating payment intent:', error);

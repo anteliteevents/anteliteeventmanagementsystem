@@ -67,7 +67,7 @@ export function salesRoutes(router: Router): void {
   router.post('/booths/reserve', authenticate, async (req: Request, res: Response) => {
     try {
       const { boothId, eventId, durationMinutes } = req.body;
-      const exhibitorId = req.user?.id;
+      const exhibitorId = (req as any).user?.id;
 
       if (!boothId || !eventId || !exhibitorId) {
         return res.status(400).json(apiGateway.error('VALIDATION_ERROR', 'Missing required fields'));
@@ -93,7 +93,7 @@ export function salesRoutes(router: Router): void {
   router.post('/booths/book', authenticate, async (req: Request, res: Response) => {
     try {
       const { boothId, eventId } = req.body;
-      const exhibitorId = req.user?.id;
+      const exhibitorId = (req as any).user?.id;
 
       if (!boothId || !eventId || !exhibitorId) {
         return res.status(400).json(apiGateway.error('VALIDATION_ERROR', 'Missing required fields'));

@@ -3,7 +3,7 @@
  * Handles policy management, terms & conditions, and compliance
  */
 
-import { Express, Router } from 'express';
+import { Router } from 'express';
 import { ModuleConfig } from '../../core/module-loader';
 import { eventBus } from '../../core/event-bus';
 import { featureFlags } from '../../core/feature-flags';
@@ -16,8 +16,8 @@ const moduleConfig: ModuleConfig = {
   /**
    * Register API routes
    */
-  routes: (app: Express | Router) => {
-    app.use('/', policiesRoutes);
+  routes: (router: Router) => {
+    router.use('/', policiesRoutes);
   },
 
   /**

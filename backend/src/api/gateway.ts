@@ -123,6 +123,13 @@ class ApiGateway {
   /**
    * Create standardized API response
    */
+  success<T>(data: T, meta?: any): ApiResponse<T> {
+    return ApiGateway.success(data, meta);
+  }
+  error(code: string, message: string, details?: any): ApiResponse {
+    return ApiGateway.error(code, message, details);
+  }
+
   static success<T>(data: T, meta?: any): ApiResponse<T> {
     return {
       success: true,

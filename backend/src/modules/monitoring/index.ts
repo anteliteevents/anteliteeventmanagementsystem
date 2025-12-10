@@ -3,7 +3,7 @@
  * Handles sales team monitoring, performance metrics, and analytics
  */
 
-import { Express, Router } from 'express';
+import { Router } from 'express';
 import { ModuleConfig } from '../../core/module-loader';
 import { eventBus } from '../../core/event-bus';
 import { featureFlags } from '../../core/feature-flags';
@@ -17,8 +17,8 @@ const moduleConfig: ModuleConfig = {
   /**
    * Register API routes
    */
-  routes: (app: Express | Router) => {
-    app.use('/', monitoringRoutes);
+  routes: (router: Router) => {
+    router.use('/', monitoringRoutes);
   },
 
   /**

@@ -7,7 +7,7 @@
 import { EventEmitter } from 'events';
 import { readdir, readFile, stat } from 'fs/promises';
 import { join, resolve } from 'path';
-import { Express } from 'express';
+import { Express, Router } from 'express';
 import eventBus from './event-bus';
 import featureFlags from './feature-flags';
 
@@ -24,7 +24,7 @@ export interface ModuleMetadata {
 export interface ModuleConfig {
   metadata: ModuleMetadata;
   path: string;
-  routes?: (app: Express) => void;
+  routes?: (router: Router) => void;
   eventHandlers?: { [event: string]: (payload: any) => void | Promise<void> };
   migrations?: () => Promise<void>;
   initialize?: () => Promise<void>;

@@ -27,9 +27,9 @@ class EventBus extends EventEmitter {
   }
 
   /**
-   * Emit an event (async-safe)
+   * Emit an event (sync, matches EventEmitter signature)
    */
-  async emit(event: string, payload: EventPayload = {}): Promise<boolean> {
+  emit(event: string, payload: EventPayload = {}): boolean {
     const enrichedPayload: EventPayload = {
       ...payload,
       timestamp: new Date(),
@@ -145,7 +145,7 @@ class EventBus extends EventEmitter {
 export const eventBus = new EventBus();
 
 // Error handling
-eventBus.on('error', (error: Error) => {
+eventBus.on('error', (error: any) => {
   console.error('EventBus error:', error);
 });
 

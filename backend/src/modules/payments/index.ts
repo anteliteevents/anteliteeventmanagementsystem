@@ -3,7 +3,7 @@
  * Handles payment processing, Stripe integration, and invoice management
  */
 
-import { Express, Router } from 'express';
+import { Router } from 'express';
 import { ModuleConfig } from '../../core/module-loader';
 import { eventBus } from '../../core/event-bus';
 import { featureFlags } from '../../core/feature-flags';
@@ -17,9 +17,9 @@ const moduleConfig: ModuleConfig = {
   /**
    * Register API routes
    */
-  routes: (app: Express | Router) => {
+  routes: (router: Router) => {
     // Mount payment routes directly on the provided router
-    app.use('/', paymentRoutes);
+    router.use('/', paymentRoutes);
   },
 
   /**

@@ -47,7 +47,7 @@
   },
   {
     "name": "payments",
-    "enabled": true,
+    "enabled": false,
     "description": "Payment gateway integration",
     "module": "payments"
   },

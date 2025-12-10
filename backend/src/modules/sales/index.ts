@@ -4,7 +4,7 @@
  * Handles booth sales, floor plans, and real-time availability updates.
  */
 
-import { Express, Router } from 'express';
+import { Router } from 'express';
 import { ModuleConfig } from '../../core/module-loader';
 import eventBus from '../../core/event-bus';
 import featureFlags from '../../core/feature-flags';
@@ -24,10 +24,8 @@ const moduleConfig: ModuleConfig = {
   /**
    * Register API routes
    */
-  routes: (app: Express | Router) => {
-    const router = Router();
+  routes: (router: Router) => {
     salesRoutes(router);
-    app.use('/sales', router);
   },
 
   /**

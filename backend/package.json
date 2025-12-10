@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
+    "postbuild": "node scripts/copy-module-json.js",
     "start": "node dist/server.js",
     "test": "jest",
     "migrate": "node dist/migrations/runMigrations.js"

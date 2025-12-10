@@ -28,9 +28,14 @@ const httpServer = createServer(app);
 const io = setupSocketIO(httpServer);
 
 // Middleware
+const allowedOrigins = (process.env.CORS_ORIGIN || [
+  'http://localhost:3000',
+  'https://anteliteeventssystem-2s8af5wgz-anteliteevents-projects.vercel.app',
+  'https://anteliteeventssystem.vercel.app'
+].join(',')).split(',').map(o => o.trim());
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: allowedOrigins,
   credentials: true
 }));
 

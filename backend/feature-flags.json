@@ -22,12 +22,6 @@
     "module": "costing"
   },
   {
-    "name": "events",
-    "enabled": true,
-    "description": "Events module",
-    "module": "events"
-  },
-  {
     "name": "proposals",
     "enabled": true,
     "description": "Proposal creation module",
@@ -41,13 +35,13 @@
   },
   {
     "name": "policies",
-    "enabled": true,
+    "enabled": false,
     "description": "Policy management module",
     "module": "policies"
   },
   {
     "name": "payments",
-    "enabled": false,
+    "enabled": true,
     "description": "Payment gateway integration",
     "module": "payments"
   },

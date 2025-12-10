@@ -1,0 +1,25 @@
+{
+  "name": "costing",
+  "version": "1.0.0",
+  "description": "Cost tracking and budget management module for events and booths",
+  "events": [
+    "cost.added",
+    "cost.updated",
+    "cost.deleted",
+    "budget.exceeded",
+    "budget.warning"
+  ],
+  "dbTables": [
+    "costs",
+    "budgets",
+    "cost_categories"
+  ],
+  "apiRoutes": [
+    "/api/costing/*"
+  ],
+  "dependencies": [
+    "authentication",
+    "database",
+    "events"
+  ]
+}

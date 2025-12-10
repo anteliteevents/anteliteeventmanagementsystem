@@ -18,6 +18,41 @@ declare class BoothModel {
      */
     findById(id: string): Promise<Booth | null>;
     /**
+     * Create a new booth
+     */
+    create(data: {
+        eventId: string;
+        boothNumber: string;
+        size: string;
+        price: number;
+        status?: string;
+        locationX?: number;
+        locationY?: number;
+        width?: number;
+        height?: number;
+        description?: string;
+        amenities?: string[];
+    }): Promise<Booth>;
+    /**
+     * Update a booth
+     */
+    update(id: string, data: Partial<{
+        boothNumber: string;
+        size: string;
+        price: number;
+        status: string;
+        locationX: number;
+        locationY: number;
+        width: number;
+        height: number;
+        description: string;
+        amenities: string[];
+    }>): Promise<Booth>;
+    /**
+     * Delete a booth
+     */
+    delete(id: string): Promise<void>;
+    /**
      * Update booth status
      */
     updateStatus(id: string, status: string): Promise<Booth>;

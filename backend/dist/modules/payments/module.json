@@ -1,0 +1,27 @@
+{
+  "name": "payments",
+  "version": "1.0.0",
+  "description": "Payment processing module with Stripe integration, invoices, and transaction management",
+  "events": [
+    "payment.initiated",
+    "payment.completed",
+    "payment.failed",
+    "payment.refunded",
+    "invoice.generated",
+    "invoice.paid",
+    "invoice.overdue"
+  ],
+  "dbTables": [
+    "transactions",
+    "invoices",
+    "payment_methods"
+  ],
+  "apiRoutes": [
+    "/api/payments/*"
+  ],
+  "dependencies": [
+    "authentication",
+    "database",
+    "sales"
+  ]
+}

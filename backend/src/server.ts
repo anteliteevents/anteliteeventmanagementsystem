@@ -94,6 +94,7 @@ app.use('/api/invoices', invoicesRoutes);
 app.use('/api/reservations', reservationsRoutes);
 
 // Initialize Modular Architecture
+// Note: Module routes are registered via API Gateway after modules are loaded
 async function initializeModules() {
   try {
     console.log('\n🔧 Initializing Modular Architecture...\n');
@@ -128,8 +129,14 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// 404 handler
+// 404 handler for non-API routes only
+// API routes are handled by API Gateway's 404 handler
 app.use((req, res) => {
+  // Skip API routes - they're handled by API Gateway
+  if (req.path.startsWith('/api')) {
+    return; // Let API Gateway handle it
+  }
+  
   res.status(404).json({
     success: false,
     error: {

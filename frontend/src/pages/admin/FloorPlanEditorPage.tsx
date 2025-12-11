@@ -197,24 +197,42 @@ const FloorPlanEditorPage: React.FC = () => {
         {/* Left Panel - Properties */}
         <div className="editor-sidebar">
           <div className="sidebar-section">
-            <h3>📸 Background Image</h3>
+            <h3>📸 Background Image <span className="optional-badge">(Optional)</span></h3>
+            <p className="section-description">
+              You can work with or without a background image. Without an image, you'll see a grid to help you draw shapes.
+            </p>
             <div className="image-upload-area">
               {imagePreview ? (
                 <div className="image-preview">
                   <img src={imagePreview} alt="Floor plan background" />
                   <button
                     className="btn-remove-image"
-                    onClick={() => {
-                      setImagePreview('');
-                      setImageFile(null);
+                    onClick={async () => {
+                      if (id && window.confirm('Remove background image? You can still draw shapes on the grid.')) {
+                        try {
+                          await FloorPlanService.updateFloorPlan(id, {
+                            imageUrl: ''
+                          });
+                          setImagePreview('');
+                          setImageFile(null);
+                          if (floorPlan) {
+                            setFloorPlan({ ...floorPlan, imageUrl: '' });
+                          }
+                        } catch (error: any) {
+                          alert('Error removing image: ' + error.message);
+                        }
+                      }
                     }}
+                    title="Remove image"
                   >
                     ✕
                   </button>
                 </div>
               ) : (
                 <div className="upload-placeholder">
-                  <p>No image</p>
+                  <div className="placeholder-icon">🖼️</div>
+                  <p>No background image</p>
+                  <p className="placeholder-hint">Grid will be shown instead</p>
                 </div>
               )}
               <input
@@ -225,7 +243,7 @@ const FloorPlanEditorPage: React.FC = () => {
                 style={{ display: 'none' }}
               />
               <label htmlFor="image-upload" className="btn-upload">
-                📁 Choose Image
+                {imagePreview ? '🔄 Change Image' : '📁 Add Background Image'}
               </label>
               {imageFile && (
                 <button
@@ -379,6 +397,14 @@ const FloorPlanEditorPage: React.FC = () => {
 
         {/* Main Canvas Area */}
         <div className="editor-main">
+          {!imagePreview && (
+            <div className="canvas-info-banner">
+              <p>
+                💡 <strong>Working without background image:</strong> You can draw shapes directly on the grid. 
+                Add a background image later if needed, or continue working with the grid.
+              </p>
+            </div>
+          )}
           <FloorPlanCanvasEditor
             imageUrl={imagePreview || undefined}
             shapes={shapes}

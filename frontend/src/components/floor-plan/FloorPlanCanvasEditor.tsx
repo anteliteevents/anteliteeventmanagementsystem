@@ -91,25 +91,47 @@ const FloorPlanCanvasEditor: React.FC<FloorPlanCanvasEditorProps> = ({
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
 
-    // Draw background image
+    // Draw background image or grid
     if (imageRef.current && imageLoaded) {
+      // Draw image background
       ctx.drawImage(imageRef.current, 0, 0, canvas.width / zoom, canvas.height / zoom);
     } else {
-      // Draw grid background
-      ctx.fillStyle = '#f5f5f5';
+      // Draw grid background (when no image)
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width / zoom, canvas.height / zoom);
       
-      // Draw grid lines
-      ctx.strokeStyle = '#e0e0e0';
+      // Draw grid lines (more visible)
+      ctx.strokeStyle = '#d0d0d0';
       ctx.lineWidth = 1;
       const gridSize = 50;
+      
+      // Draw vertical lines
       for (let x = 0; x < canvas.width / zoom; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height / zoom);
         ctx.stroke();
       }
+      
+      // Draw horizontal lines
       for (let y = 0; y < canvas.height / zoom; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width / zoom, y);
+        ctx.stroke();
+      }
+      
+      // Draw thicker lines every 5 grid cells (250px)
+      ctx.strokeStyle = '#b0b0b0';
+      ctx.lineWidth = 2;
+      const majorGridSize = gridSize * 5;
+      for (let x = 0; x < canvas.width / zoom; x += majorGridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height / zoom);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height / zoom; y += majorGridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width / zoom, y);

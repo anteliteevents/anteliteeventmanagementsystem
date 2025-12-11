@@ -153,13 +153,16 @@ class FloorPlanService {
     const formData = new FormData();
     formData.append('image', file);
 
+    // Don't set Content-Type header - axios will set it automatically with boundary for FormData
     const response = await api.post<ApiResponse<{ filename: string; url: string; originalName: string; size: number }>>(
       '/sales/floor-plans/upload-image',
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          // Remove Content-Type to let axios set it automatically with boundary
         },
+        // Increase timeout for large files
+        timeout: 60000, // 60 seconds
       }
     );
     if (!response.data.data) {

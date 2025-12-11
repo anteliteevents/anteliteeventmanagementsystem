@@ -82,7 +82,10 @@ const FloorPlanEditorPage: React.FC = () => {
 
     try {
       setSaving(true);
+      console.log('Uploading image:', imageFile.name, imageFile.size, 'bytes');
+      
       const result = await FloorPlanService.uploadImage(imageFile);
+      console.log('Upload successful:', result);
       
       // Update floor plan with new image URL
       const updated = await FloorPlanService.updateFloorPlan(id, {
@@ -92,9 +95,11 @@ const FloorPlanEditorPage: React.FC = () => {
       setFloorPlan(updated);
       setImagePreview(result.url);
       setImageFile(null);
-      alert('Image uploaded successfully!');
+      alert('✅ Image uploaded successfully!');
     } catch (error: any) {
-      alert('Error uploading image: ' + error.message);
+      console.error('Upload error:', error);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Unknown error';
+      alert('❌ Error uploading image: ' + errorMessage);
     } finally {
       setSaving(false);
     }

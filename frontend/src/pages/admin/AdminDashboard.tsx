@@ -14,6 +14,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import AuthService, { User } from '../../services/auth.service';
 import EventService from '../../services/event.service';
 import api from '../../services/api';

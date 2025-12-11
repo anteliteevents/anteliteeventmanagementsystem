@@ -84,6 +84,10 @@ app.use('/api/admin/booths', boothsRoutes); // CRUD operations
 app.use('/api/events', eventRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/invoices', invoicesRoutes);
+app.use('/api/reservations', reservationsRoutes);
+import invoicesRoutes from './routes/invoices.routes';
+import reservationsRoutes from './routes/reservations.routes';
 
 // Initialize Modular Architecture
 async function initializeModules() {

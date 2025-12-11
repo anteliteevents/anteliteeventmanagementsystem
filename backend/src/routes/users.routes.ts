@@ -19,11 +19,23 @@ router.get('/', usersController.getAllUsers);
 // Get user by ID
 router.get('/:id', usersController.getUserById);
 
+// Create a new user
+router.post('/', usersController.createUser);
+
+// Update user
+router.put('/:id', usersController.updateUser);
+
 // Toggle user active status
 router.put('/:id/toggle-active', usersController.toggleActive);
 
 // Update user role
 router.put('/:id/role', usersController.updateRole);
+
+// Delete user
+router.delete('/:id', usersController.deleteUser);
+
+// Duplicate user
+router.post('/:id/duplicate', usersController.duplicateUser);
 
 export default router;
 

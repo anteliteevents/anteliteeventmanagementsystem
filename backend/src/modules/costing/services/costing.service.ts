@@ -269,6 +269,129 @@ class CostingService {
   }
 
   /**
+   * Get cost by ID
+   */
+  async getCostById(costId: string): Promise<Cost | null> {
+    const query = `SELECT * FROM costs WHERE id = $1`;
+    const result = await pool.query(query, [costId]);
+    if (result.rows.length === 0) return null;
+    return this.mapCost(result.rows[0]);
+  }
+
+  /**
+   * Duplicate cost
+   */
+  async duplicateCost(costId: string, data?: {
+    eventId?: string;
+    description?: string;
+  }): Promise<Cost> {
+    const originalCost = await this.getCostById(costId);
+    if (!originalCost) {
+      throw new Error('Cost not found');
+    }
+
+    return await this.addCost({
+      eventId: data?.eventId || originalCost.eventId,
+      category: originalCost.category,
+      description: data?.description || `${originalCost.description} (Copy)`,
+      amount: originalCost.amount,
+      currency: originalCost.currency,
+      vendor: originalCost.vendor,
+      date: originalCost.date,
+    });
+  }
+
+  /**
+   * Get budget by ID
+   */
+  async getBudgetById(budgetId: string): Promise<Budget | null> {
+    const query = `SELECT * FROM budgets WHERE id = $1`;
+    const result = await pool.query(query, [budgetId]);
+    if (result.rows.length === 0) return null;
+    return this.mapBudget(result.rows[0]);
+  }
+
+  /**
+   * Update budget
+   */
+  async updateBudget(budgetId: string, data: {
+    allocatedAmount?: number;
+    category?: string;
+    currency?: string;
+  }): Promise<Budget> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (data.allocatedAmount !== undefined) {
+      updates.push(`allocated_amount = $${paramIndex}`);
+      values.push(data.allocatedAmount);
+      paramIndex++;
+    }
+    if (data.category !== undefined) {
+      updates.push(`category = $${paramIndex}`);
+      values.push(data.category);
+      paramIndex++;
+    }
+    if (data.currency !== undefined) {
+      updates.push(`currency = $${paramIndex}`);
+      values.push(data.currency);
+      paramIndex++;
+    }
+
+    if (updates.length === 0) {
+      const budget = await this.getBudgetById(budgetId);
+      if (!budget) throw new Error('Budget not found');
+      return budget;
+    }
+
+    updates.push(`updated_at = NOW()`);
+    values.push(budgetId);
+
+    const query = `
+      UPDATE budgets
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, values);
+    return this.mapBudget(result.rows[0]);
+  }
+
+  /**
+   * Delete budget
+   */
+  async deleteBudget(budgetId: string): Promise<void> {
+    const query = `DELETE FROM budgets WHERE id = $1`;
+    await pool.query(query, [budgetId]);
+
+    await eventBus.emit('budget.deleted', {
+      budgetId,
+    });
+  }
+
+  /**
+   * Duplicate budget
+   */
+  async duplicateBudget(budgetId: string, data?: {
+    eventId?: string;
+    category?: string;
+  }): Promise<Budget> {
+    const originalBudget = await this.getBudgetById(budgetId);
+    if (!originalBudget) {
+      throw new Error('Budget not found');
+    }
+
+    return await this.setBudget(
+      data?.eventId || originalBudget.eventId,
+      data?.category || originalBudget.category,
+      originalBudget.allocatedAmount,
+      originalBudget.currency
+    );
+  }
+
+  /**
    * Check budget and emit warnings
    */
   private async checkBudget(eventId: string, category: string, amount: number): Promise<void> {

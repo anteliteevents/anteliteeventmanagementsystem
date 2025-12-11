@@ -155,6 +155,72 @@ class UserModel {
     `;
     await pool.query(query, [role, id]);
   }
+
+  /**
+   * Update user
+   */
+  async update(id: string, userData: {
+    firstName?: string;
+    lastName?: string;
+    companyName?: string;
+    phone?: string;
+    email?: string;
+  }): Promise<void> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (userData.firstName !== undefined) {
+      updates.push(`first_name = $${paramIndex}`);
+      values.push(userData.firstName);
+      paramIndex++;
+    }
+    if (userData.lastName !== undefined) {
+      updates.push(`last_name = $${paramIndex}`);
+      values.push(userData.lastName);
+      paramIndex++;
+    }
+    if (userData.companyName !== undefined) {
+      updates.push(`company_name = $${paramIndex}`);
+      values.push(userData.companyName);
+      paramIndex++;
+    }
+    if (userData.phone !== undefined) {
+      updates.push(`phone = $${paramIndex}`);
+      values.push(userData.phone);
+      paramIndex++;
+    }
+    if (userData.email !== undefined) {
+      updates.push(`email = $${paramIndex}`);
+      values.push(userData.email);
+      paramIndex++;
+    }
+
+    if (updates.length === 0) {
+      return;
+    }
+
+    updates.push(`updated_at = NOW()`);
+    values.push(id);
+
+    const query = `
+      UPDATE users
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+    `;
+    await pool.query(query, values);
+  }
+
+  /**
+   * Delete user
+   */
+  async delete(id: string): Promise<void> {
+    const query = `
+      DELETE FROM users
+      WHERE id = $1
+    `;
+    await pool.query(query, [id]);
+  }
 }
 
 export default new UserModel();

@@ -101,6 +101,9 @@ const FloorPlanManagementView: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      console.log('Saving floor plan:', editingFloorPlan ? 'update' : 'create');
+      console.log('Form data:', formData);
+      
       if (editingFloorPlan) {
         await FloorPlanService.updateFloorPlan(editingFloorPlan.id, {
           name: formData.name,
@@ -108,14 +111,18 @@ const FloorPlanManagementView: React.FC = () => {
           imageUrl: formData.imageUrl
         });
       } else {
-        await FloorPlanService.createFloorPlan(formData);
+        const result = await FloorPlanService.createFloorPlan(formData);
+        console.log('Created floor plan:', result);
       }
       setShowCreateModal(false);
       setShowEditModal(false);
       setEditingFloorPlan(null);
       await loadFloorPlans();
+      alert('✅ Floor plan saved successfully!');
     } catch (error: any) {
-      alert('Error saving floor plan: ' + error.message);
+      console.error('Save error:', error);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Unknown error';
+      alert('❌ Error saving floor plan: ' + errorMessage);
     }
   };
 

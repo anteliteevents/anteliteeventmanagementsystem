@@ -107,11 +107,19 @@ class FloorPlanService {
    * Create new floor plan
    */
   async createFloorPlan(input: CreateFloorPlanInput): Promise<FloorPlan> {
-    const response = await api.post<ApiResponse<FloorPlan>>('/sales/floor-plans', input);
-    if (!response.data.data) {
-      throw new Error('Failed to create floor plan');
+    try {
+      console.log('Creating floor plan with input:', input);
+      const response = await api.post<ApiResponse<FloorPlan>>('/sales/floor-plans', input);
+      if (!response.data.data) {
+        throw new Error(response.data.error?.message || 'Failed to create floor plan');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      // Provide better error message
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to create floor plan';
+      console.error('Create floor plan error:', error);
+      throw new Error(errorMessage);
     }
-    return response.data.data;
   }
 
   /**

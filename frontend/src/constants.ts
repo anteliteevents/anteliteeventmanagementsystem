@@ -18,7 +18,14 @@ export const CHART_COLORS = [
 export const DASHBOARD_CONSTANTS = {
   MAX_EVENTS_FOR_OVERVIEW: 3,
   MAX_EVENTS_FOR_QUICK_LOAD: 6,
+  MAX_EVENTS_FOR_SALES: 10, // Limit events for sales view
+  MAX_EVENTS_FOR_COSTING: 10, // Limit events for costing view
+  MAX_TRANSACTIONS: 20, // Limit transactions displayed
+  MAX_INVOICES: 20, // Limit invoices displayed
+  MAX_ACTIVITIES: 50, // Limit activities displayed
+  MAX_PROPOSALS: 20, // Limit proposals displayed
   CHART_HEIGHT: 260,
+  CACHE_DURATION: 30000, // 30 seconds cache
 } as const;
 
 // API Timeouts (in milliseconds)

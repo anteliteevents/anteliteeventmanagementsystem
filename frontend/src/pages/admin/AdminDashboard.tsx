@@ -36,6 +36,29 @@ import './AdminDashboard.css';
 import './AdminDashboard.enhanced.css';
 import './shared-components.css';
 
+// Simple cache for data
+const dataCache: Record<string, { data: any; timestamp: number }> = {};
+
+const getCachedData = (key: string): any | null => {
+  const cached = dataCache[key];
+  if (cached && Date.now() - cached.timestamp < DASHBOARD_CONSTANTS.CACHE_DURATION) {
+    return cached.data;
+  }
+  return null;
+};
+
+const setCachedData = (key: string, data: any): void => {
+  dataCache[key] = { data, timestamp: Date.now() };
+};
+
+const clearCachedData = (key?: string): void => {
+  if (key) {
+    delete dataCache[key];
+  } else {
+    Object.keys(dataCache).forEach(k => delete dataCache[k]);
+  }
+};
+
 const AdminDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [activeView, setActiveView] = useState<string>('overview');
@@ -76,7 +99,21 @@ const AdminDashboard: React.FC = () => {
     await loadOverviewData();
   };
 
-  const loadOverviewData = async () => {
+  const loadOverviewData = async (forceRefresh = false) => {
+    // Check cache first (unless forcing refresh)
+    const cacheKey = 'overview-data';
+    if (!forceRefresh) {
+      const cached = getCachedData(cacheKey);
+      if (cached) {
+        setOverviewData(cached);
+        setOverviewLoading(false);
+        setLoading(false);
+        return;
+      }
+    } else {
+      clearCachedData(cacheKey);
+    }
+
     try {
       setOverviewLoading(true);
       setLoading(true);
@@ -143,8 +180,14 @@ const AdminDashboard: React.FC = () => {
         })
       );
 
-      const transactionsRes = await withTimeout(api.get('/payments/transactions', { headers }), API_TIMEOUTS.DEFAULT).catch(() => ({ data: { data: [] } }));
-      const invoicesRes = await withTimeout(api.get('/payments/invoices', { headers }), API_TIMEOUTS.DEFAULT).catch(() => ({ data: { data: [] } }));
+      const transactionsRes = await withTimeout(api.get('/payments/transactions', { 
+        headers,
+        params: { limit: 10, sort: 'createdAt', order: 'desc' }
+      }), API_TIMEOUTS.PAYMENTS).catch(() => ({ data: { data: [] } }));
+      const invoicesRes = await withTimeout(api.get('/payments/invoices', { 
+        headers,
+        params: { limit: 10, sort: 'createdAt', order: 'desc' }
+      }), API_TIMEOUTS.PAYMENTS).catch(() => ({ data: { data: [] } }));
       const transactions = transactionsRes.data?.data || transactionsRes.data || [];
       const invoices = invoicesRes.data?.data || invoicesRes.data || [];
 
@@ -191,6 +234,7 @@ const AdminDashboard: React.FC = () => {
         invoiceStatus: Object.entries(invoiceStatusCounts).map(([name, value]) => ({ name, value })),
       };
 
+      setCachedData(cacheKey, overview);
       setOverviewData(overview);
     } catch (error: any) {
       console.error('Error loading overview data:', error);
@@ -201,23 +245,53 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const loadSalesData = async () => {
+  const loadSalesData = async (forceRefresh = false) => {
+    // Check cache first (unless forcing refresh)
+    const cacheKey = 'sales-data';
+    if (!forceRefresh) {
+      const cached = getCachedData(cacheKey);
+      if (cached) {
+        setSalesData(cached);
+        return;
+      }
+    } else {
+      clearCachedData(cacheKey);
+    }
+
     try {
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
+      // Only fetch active/published events and limit results
       const [eventsRes, boothsRes] = await Promise.all([
-        api.get('/events', { headers }),
-        api.get('/booths', { headers }),
+        api.get('/events', { 
+          headers,
+          params: { 
+            status: 'active,published',
+            limit: DASHBOARD_CONSTANTS.MAX_EVENTS_FOR_SALES 
+          } 
+        }),
+        api.get('/booths', { 
+          headers,
+          params: { limit: 100 } // Limit booths
+        }),
       ]);
 
-      const events = eventsRes.data?.data || eventsRes.data || [];
-      const booths = boothsRes.data?.data || boothsRes.data || [];
+      const events = (eventsRes.data?.data || eventsRes.data || []).slice(0, DASHBOARD_CONSTANTS.MAX_EVENTS_FOR_SALES);
+      const booths = (boothsRes.data?.data || boothsRes.data || []).slice(0, 100);
 
+      // Only load stats for limited number of events (parallel)
       const eventsWithStats = await Promise.all(
-        events.map(async (event: any) => {
-          const stats = await EventService.getEventStatistics(event.id).catch(() => null);
-          return { event, statistics: stats };
+        events.slice(0, DASHBOARD_CONSTANTS.MAX_EVENTS_FOR_SALES).map(async (event: any) => {
+          try {
+            const stats = await Promise.race([
+              EventService.getEventStatistics(event.id),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), API_TIMEOUTS.EVENT_STATISTICS))
+            ]).catch(() => null);
+            return { event, statistics: stats };
+          } catch {
+            return { event, statistics: null };
+          }
         })
       );
 
@@ -229,32 +303,54 @@ const AdminDashboard: React.FC = () => {
       const bookedBooths = booths.filter((b: any) => b.status === 'booked').length;
       const availableBooths = booths.filter((b: any) => b.status === 'available').length;
 
-      setSalesData({
+      const data = {
         totalRevenue,
         totalBooths,
         bookedBooths,
         availableBooths,
-        booths,
+        booths: booths.slice(0, 50), // Limit booths in response
         events: eventsWithStats,
-      });
+      };
+
+      setCachedData(cacheKey, data);
+      setSalesData(data);
     } catch (error: any) {
       console.error('Error loading sales data:', error);
       setSalesData(null);
     }
   };
 
-  const loadPaymentsData = async () => {
+  const loadPaymentsData = async (forceRefresh = false) => {
+    // Check cache first (unless forcing refresh)
+    const cacheKey = 'payments-data';
+    if (!forceRefresh) {
+      const cached = getCachedData(cacheKey);
+      if (cached) {
+        setPaymentsData(cached);
+        return;
+      }
+    } else {
+      clearCachedData(cacheKey);
+    }
+
     try {
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
+      // Limit results with query params
       const [transactionsRes, invoicesRes] = await Promise.all([
-        api.get('/payments/transactions', { headers }),
-        api.get('/payments/invoices', { headers }),
+        api.get('/payments/transactions', { 
+          headers,
+          params: { limit: DASHBOARD_CONSTANTS.MAX_TRANSACTIONS, sort: 'createdAt', order: 'desc' }
+        }),
+        api.get('/payments/invoices', { 
+          headers,
+          params: { limit: DASHBOARD_CONSTANTS.MAX_INVOICES, sort: 'createdAt', order: 'desc' }
+        }),
       ]);
 
-      const transactions = transactionsRes.data?.data || transactionsRes.data || [];
-      const invoices = invoicesRes.data?.data || invoicesRes.data || [];
+      const transactions = (transactionsRes.data?.data || transactionsRes.data || []).slice(0, DASHBOARD_CONSTANTS.MAX_TRANSACTIONS);
+      const invoices = (invoicesRes.data?.data || invoicesRes.data || []).slice(0, DASHBOARD_CONSTANTS.MAX_INVOICES);
 
       const totalRevenue = transactions
         .filter((t: any) => t.status === 'completed')
@@ -264,7 +360,7 @@ const AdminDashboard: React.FC = () => {
       const pendingPayments = transactions.filter((t: any) => t.status === 'pending').length;
       const paidInvoices = invoices.filter((i: any) => i.status === 'paid').length;
 
-      setPaymentsData({
+      const data = {
         totalRevenue,
         completedPayments,
         pendingPayments,
@@ -273,29 +369,59 @@ const AdminDashboard: React.FC = () => {
         totalTransactions: transactions.length,
         transactions,
         invoices,
-      });
+      };
+
+      setCachedData(cacheKey, data);
+      setPaymentsData(data);
     } catch (error: any) {
       console.error('Error loading payments data:', error);
       setPaymentsData(null);
     }
   };
 
-  const loadCostingData = async () => {
+  const loadCostingData = async (forceRefresh = false) => {
+    // Check cache first (unless forcing refresh)
+    const cacheKey = 'costing-data';
+    if (!forceRefresh) {
+      const cached = getCachedData(cacheKey);
+      if (cached) {
+        setCostingData(cached);
+        return;
+      }
+    } else {
+      clearCachedData(cacheKey);
+    }
+
     try {
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
+      // Only fetch active/published events and limit results
       const [eventsRes] = await Promise.all([
-        api.get('/events', { headers }),
+        api.get('/events', { 
+          headers,
+          params: { 
+            status: 'active,published',
+            limit: DASHBOARD_CONSTANTS.MAX_EVENTS_FOR_COSTING 
+          } 
+        }),
       ]);
 
-      const events = eventsRes.data?.data || eventsRes.data || [];
+      const events = (eventsRes.data?.data || eventsRes.data || []).slice(0, DASHBOARD_CONSTANTS.MAX_EVENTS_FOR_COSTING);
 
+      // Load costing summaries in parallel with timeout
       const eventsWithCosts = await Promise.all(
         events.map(async (event: any) => {
-          const costSummaryRes = await api.get(`/costing/summary/event/${event.id}`, { headers }).catch(() => null);
-          const summary = costSummaryRes?.data?.data || null;
-          return { event, summary };
+          try {
+            const costSummaryRes: any = await Promise.race([
+              api.get(`/costing/summary/event/${event.id}`, { headers }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), API_TIMEOUTS.COSTING_SUMMARY))
+            ]).catch(() => null);
+            const summary = costSummaryRes?.data?.data || null;
+            return { event, summary };
+          } catch {
+            return { event, summary: null };
+          }
         })
       );
 
@@ -309,61 +435,98 @@ const AdminDashboard: React.FC = () => {
       );
       const remaining = totalBudget - totalSpent;
 
-      setCostingData({
+      const data = {
         totalBudget,
         totalSpent,
         remaining,
         eventsWithCosts: eventsWithCosts.filter((item) => item.summary).length,
-        events: eventsWithCosts,
-      });
+        events: eventsWithCosts.filter((item) => item.summary), // Only show events with costs
+      };
+
+      setCachedData(cacheKey, data);
+      setCostingData(data);
     } catch (error: any) {
       console.error('Error loading costing data:', error);
       setCostingData(null);
     }
   };
 
-  const loadProposalsData = async () => {
+  const loadProposalsData = async (forceRefresh = false) => {
+    // Check cache first (unless forcing refresh)
+    const cacheKey = 'proposals-data';
+    if (!forceRefresh) {
+      const cached = getCachedData(cacheKey);
+      if (cached) {
+        setProposalsData(cached);
+        return;
+      }
+    } else {
+      clearCachedData(cacheKey);
+    }
+
     try {
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
       const [proposalsRes, templatesRes] = await Promise.all([
-        api.get('/proposals', { headers }),
+        api.get('/proposals', { 
+          headers,
+          params: { limit: DASHBOARD_CONSTANTS.MAX_PROPOSALS, sort: 'createdAt', order: 'desc' }
+        }),
         api.get('/proposals/templates', { headers }).catch(() => ({ data: { data: [] } })),
       ]);
 
-      const allProposals = proposalsRes.data?.data || proposalsRes.data || [];
-      const templates = templatesRes.data?.data || templatesRes.data || [];
+      const allProposals = (proposalsRes.data?.data || proposalsRes.data || []).slice(0, DASHBOARD_CONSTANTS.MAX_PROPOSALS);
+      const templates = (templatesRes.data?.data || templatesRes.data || []).slice(0, 10); // Limit templates
 
       const totalProposals = allProposals.length;
       const draftProposals = allProposals.filter((p: any) => p.status === 'draft').length;
       const submittedProposals = allProposals.filter((p: any) => p.status === 'submitted').length;
       const approvedProposals = allProposals.filter((p: any) => p.status === 'approved').length;
 
-      setProposalsData({
+      const data = {
         totalProposals,
         draftProposals,
         submittedProposals,
         approvedProposals,
         allProposals,
         templates,
-      });
+      };
+
+      setCachedData(cacheKey, data);
+      setProposalsData(data);
     } catch (error: any) {
       console.error('Error loading proposals data:', error);
       setProposalsData(null);
     }
   };
 
-  const loadMonitoringData = async () => {
+  const loadMonitoringData = async (forceRefresh = false) => {
+    // Check cache first (unless forcing refresh)
+    const cacheKey = 'monitoring-data';
+    if (!forceRefresh) {
+      const cached = getCachedData(cacheKey);
+      if (cached) {
+        setMonitoringData(cached);
+        return;
+      }
+    } else {
+      clearCachedData(cacheKey);
+    }
+
     try {
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
+      // Limit activities to reduce load
       const [activitiesRes] = await Promise.all([
-        api.get('/monitoring/activities', { headers }).catch(() => ({ data: { data: [] } })),
+        api.get('/monitoring/activities', { 
+          headers,
+          params: { limit: DASHBOARD_CONSTANTS.MAX_ACTIVITIES, sort: 'created_at', order: 'desc' }
+        }).catch(() => ({ data: { data: [] } })),
       ]);
 
-      const activities = activitiesRes.data?.data || activitiesRes.data || [];
+      const activities = (activitiesRes.data?.data || activitiesRes.data || []).slice(0, DASHBOARD_CONSTANTS.MAX_ACTIVITIES);
 
       const topPerformers = activities.reduce((acc: any, activity: any) => {
         const userId = activity.user_id;
@@ -391,7 +554,7 @@ const AdminDashboard: React.FC = () => {
         .filter((a: any) => a.action_type === 'booth_booking')
         .reduce((sum: number, a: any) => sum + parseFloat(a.amount || 0), 0);
 
-      setMonitoringData({
+      const data = {
         totalActivities,
         performance: {
           sales: {
@@ -401,34 +564,55 @@ const AdminDashboard: React.FC = () => {
         },
         topPerformers: topPerformersList,
         activities: activities.slice(0, 20),
-      });
+      };
+
+      setCachedData(cacheKey, data);
+      setMonitoringData(data);
     } catch (error: any) {
       console.error('Error loading monitoring data:', error);
       setMonitoringData(null);
     }
   };
 
-  const loadPoliciesData = async () => {
+  const loadPoliciesData = async (forceRefresh = false) => {
+    // Check cache first (unless forcing refresh)
+    const cacheKey = 'policies-data';
+    if (!forceRefresh) {
+      const cached = getCachedData(cacheKey);
+      if (cached) {
+        setPoliciesData(cached);
+        return;
+      }
+    } else {
+      clearCachedData(cacheKey);
+    }
+
     try {
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
       const [policiesRes] = await Promise.all([
-        api.get('/policies', { headers }).catch(() => ({ data: { data: [] } })),
+        api.get('/policies', { 
+          headers,
+          params: { limit: 50 } // Limit policies
+        }).catch(() => ({ data: { data: [] } })),
       ]);
 
-      const policies = policiesRes.data?.data || policiesRes.data || [];
+      const policies = (policiesRes.data?.data || policiesRes.data || []).slice(0, 50);
 
       const totalPolicies = policies.length;
       const activeCount = policies.filter((p: any) => p.isActive).length;
       const categories = Array.from(new Set(policies.map((p: any) => p.category || 'General')));
 
-      setPoliciesData({
+      const data = {
         totalPolicies,
         activeCount,
         categories,
         policies,
-      });
+      };
+
+      setCachedData(cacheKey, data);
+      setPoliciesData(data);
     } catch (error: any) {
       console.error('Error loading policies data:', error);
       setPoliciesData(null);
@@ -488,15 +672,15 @@ const AdminDashboard: React.FC = () => {
             <OverviewView
               data={overviewData}
               loading={overviewLoading}
-              onRefresh={loadOverviewData}
+              onRefresh={() => loadOverviewData(true)}
             />
           )}
-          {activeView === 'sales' && <SalesDepartmentView data={salesData} onRefresh={loadSalesData} />}
-          {activeView === 'payments' && <PaymentsDepartmentView data={paymentsData} onRefresh={loadPaymentsData} />}
-          {activeView === 'costing' && <CostingDepartmentView data={costingData} onRefresh={loadCostingData} />}
-          {activeView === 'proposals' && <ProposalsDepartmentView data={proposalsData} onRefresh={loadProposalsData} />}
-          {activeView === 'monitoring' && <MonitoringDepartmentView data={monitoringData} onRefresh={loadMonitoringData} />}
-          {activeView === 'policies' && <PoliciesDepartmentView data={policiesData} onRefresh={loadPoliciesData} />}
+          {activeView === 'sales' && <SalesDepartmentView data={salesData} onRefresh={() => loadSalesData(true)} />}
+          {activeView === 'payments' && <PaymentsDepartmentView data={paymentsData} onRefresh={() => loadPaymentsData(true)} />}
+          {activeView === 'costing' && <CostingDepartmentView data={costingData} onRefresh={() => loadCostingData(true)} />}
+          {activeView === 'proposals' && <ProposalsDepartmentView data={proposalsData} onRefresh={() => loadProposalsData(true)} />}
+          {activeView === 'monitoring' && <MonitoringDepartmentView data={monitoringData} onRefresh={() => loadMonitoringData(true)} />}
+          {activeView === 'policies' && <PoliciesDepartmentView data={policiesData} onRefresh={() => loadPoliciesData(true)} />}
           {activeView === 'events' && <EventsManagementView />}
           {activeView === 'booths' && <BoothsManagementView />}
           {activeView === 'users' && <UsersManagementView />}

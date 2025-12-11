@@ -12,6 +12,8 @@ import eventRoutes from './routes/event.routes';
 import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
 import paymentsRoutes from './routes/payments.routes';
+import invoicesRoutes from './routes/invoices.routes';
+import reservationsRoutes from './routes/reservations.routes';
 
 // Modular Architecture Imports
 import { moduleLoader } from './core/module-loader';
@@ -86,8 +88,6 @@ app.use('/api/users', usersRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/reservations', reservationsRoutes);
-import invoicesRoutes from './routes/invoices.routes';
-import reservationsRoutes from './routes/reservations.routes';
 
 // Initialize Modular Architecture
 async function initializeModules() {

@@ -18,9 +18,17 @@ router.use(auth_middleware_1.requireAdmin);
 router.get('/', users_controller_1.default.getAllUsers);
 // Get user by ID
 router.get('/:id', users_controller_1.default.getUserById);
+// Create a new user
+router.post('/', users_controller_1.default.createUser);
+// Update user
+router.put('/:id', users_controller_1.default.updateUser);
 // Toggle user active status
 router.put('/:id/toggle-active', users_controller_1.default.toggleActive);
 // Update user role
 router.put('/:id/role', users_controller_1.default.updateRole);
+// Delete user
+router.delete('/:id', users_controller_1.default.deleteUser);
+// Duplicate user
+router.post('/:id/duplicate', users_controller_1.default.duplicateUser);
 exports.default = router;
 //# sourceMappingURL=users.routes.js.map

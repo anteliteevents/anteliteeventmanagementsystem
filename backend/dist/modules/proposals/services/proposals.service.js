@@ -149,6 +149,94 @@ class ProposalsService {
         return result.rows.map(row => this.mapTemplate(row));
     }
     /**
+     * Get proposal by ID
+     */
+    async getProposalById(proposalId) {
+        const query = `
+      SELECT p.*, 
+        u1.first_name || ' ' || u1.last_name as submitted_by_name,
+        u2.first_name || ' ' || u2.last_name as approved_by_name
+      FROM proposals p
+      LEFT JOIN users u1 ON p.submitted_by = u1.id
+      LEFT JOIN users u2 ON p.approved_by = u2.id
+      WHERE p.id = $1
+    `;
+        const result = await database_1.default.query(query, [proposalId]);
+        if (result.rows.length === 0)
+            return null;
+        return this.mapProposal(result.rows[0]);
+    }
+    /**
+     * Update proposal
+     */
+    async updateProposal(proposalId, data) {
+        const updates = [];
+        const values = [];
+        let paramIndex = 1;
+        if (data.title !== undefined) {
+            updates.push(`title = $${paramIndex}`);
+            values.push(data.title);
+            paramIndex++;
+        }
+        if (data.description !== undefined) {
+            updates.push(`description = $${paramIndex}`);
+            values.push(data.description);
+            paramIndex++;
+        }
+        if (data.templateId !== undefined) {
+            updates.push(`template_id = $${paramIndex}`);
+            values.push(data.templateId);
+            paramIndex++;
+        }
+        if (updates.length === 0) {
+            const proposal = await this.getProposalById(proposalId);
+            if (!proposal)
+                throw new Error('Proposal not found');
+            return proposal;
+        }
+        updates.push(`updated_at = NOW()`);
+        values.push(proposalId);
+        const query = `
+      UPDATE proposals
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `;
+        const result = await database_1.default.query(query, values);
+        const proposal = this.mapProposal(result.rows[0]);
+        await event_bus_1.eventBus.emit('proposal.updated', {
+            proposalId: proposal.id,
+            eventId: proposal.eventId,
+        });
+        return proposal;
+    }
+    /**
+     * Delete proposal
+     */
+    async deleteProposal(proposalId) {
+        const query = `DELETE FROM proposals WHERE id = $1`;
+        await database_1.default.query(query, [proposalId]);
+        await event_bus_1.eventBus.emit('proposal.deleted', {
+            proposalId,
+        });
+    }
+    /**
+     * Duplicate proposal
+     */
+    async duplicateProposal(proposalId, data) {
+        const originalProposal = await this.getProposalById(proposalId);
+        if (!originalProposal) {
+            throw new Error('Proposal not found');
+        }
+        const duplicateData = {
+            eventId: data?.eventId || originalProposal.eventId,
+            title: data?.title || `${originalProposal.title} (Copy)`,
+            description: originalProposal.description,
+            templateId: originalProposal.templateId,
+        };
+        return await this.createProposal(duplicateData);
+    }
+    /**
      * Create template
      */
     async createTemplate(data) {
@@ -166,6 +254,87 @@ class ProposalsService {
             data.category || null,
         ]);
         return this.mapTemplate(result.rows[0]);
+    }
+    /**
+     * Get template by ID
+     */
+    async getTemplateById(templateId) {
+        const query = `SELECT * FROM proposal_templates WHERE id = $1`;
+        const result = await database_1.default.query(query, [templateId]);
+        if (result.rows.length === 0)
+            return null;
+        return this.mapTemplate(result.rows[0]);
+    }
+    /**
+     * Update template
+     */
+    async updateTemplate(templateId, data) {
+        const updates = [];
+        const values = [];
+        let paramIndex = 1;
+        if (data.name !== undefined) {
+            updates.push(`name = $${paramIndex}`);
+            values.push(data.name);
+            paramIndex++;
+        }
+        if (data.description !== undefined) {
+            updates.push(`description = $${paramIndex}`);
+            values.push(data.description);
+            paramIndex++;
+        }
+        if (data.content !== undefined) {
+            updates.push(`content = $${paramIndex}`);
+            values.push(data.content);
+            paramIndex++;
+        }
+        if (data.category !== undefined) {
+            updates.push(`category = $${paramIndex}`);
+            values.push(data.category);
+            paramIndex++;
+        }
+        if (data.isActive !== undefined) {
+            updates.push(`is_active = $${paramIndex}`);
+            values.push(data.isActive);
+            paramIndex++;
+        }
+        if (updates.length === 0) {
+            const template = await this.getTemplateById(templateId);
+            if (!template)
+                throw new Error('Template not found');
+            return template;
+        }
+        updates.push(`updated_at = NOW()`);
+        values.push(templateId);
+        const query = `
+      UPDATE proposal_templates
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `;
+        const result = await database_1.default.query(query, values);
+        return this.mapTemplate(result.rows[0]);
+    }
+    /**
+     * Delete template
+     */
+    async deleteTemplate(templateId) {
+        const query = `DELETE FROM proposal_templates WHERE id = $1`;
+        await database_1.default.query(query, [templateId]);
+    }
+    /**
+     * Duplicate template
+     */
+    async duplicateTemplate(templateId, data) {
+        const originalTemplate = await this.getTemplateById(templateId);
+        if (!originalTemplate) {
+            throw new Error('Template not found');
+        }
+        return await this.createTemplate({
+            name: data?.name || `${originalTemplate.name} (Copy)`,
+            description: originalTemplate.description,
+            content: originalTemplate.content,
+            category: originalTemplate.category,
+        });
     }
     mapProposal(row) {
         return {

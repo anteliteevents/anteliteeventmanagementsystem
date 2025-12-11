@@ -16,6 +16,8 @@ const event_routes_1 = __importDefault(require("./routes/event.routes"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const users_routes_1 = __importDefault(require("./routes/users.routes"));
 const payments_routes_1 = __importDefault(require("./routes/payments.routes"));
+const invoices_routes_1 = __importDefault(require("./routes/invoices.routes"));
+const reservations_routes_1 = __importDefault(require("./routes/reservations.routes"));
 // Modular Architecture Imports
 const module_loader_1 = require("./core/module-loader");
 const gateway_1 = require("./api/gateway");
@@ -73,6 +75,8 @@ app.use('/api/admin/booths', booths_routes_1.default); // CRUD operations
 app.use('/api/events', event_routes_1.default);
 app.use('/api/users', users_routes_1.default);
 app.use('/api/payments', payments_routes_1.default);
+app.use('/api/invoices', invoices_routes_1.default);
+app.use('/api/reservations', reservations_routes_1.default);
 // Initialize Modular Architecture
 async function initializeModules() {
     try {

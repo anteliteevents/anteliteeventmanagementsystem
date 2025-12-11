@@ -36,6 +36,20 @@ declare class UserModel {
      * Update user role
      */
     updateRole(id: string, role: string): Promise<void>;
+    /**
+     * Update user
+     */
+    update(id: string, userData: {
+        firstName?: string;
+        lastName?: string;
+        companyName?: string;
+        phone?: string;
+        email?: string;
+    }): Promise<void>;
+    /**
+     * Delete user
+     */
+    delete(id: string): Promise<void>;
 }
 declare const _default: UserModel;
 export default _default;

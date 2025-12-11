@@ -68,6 +68,40 @@ declare class CostingService {
      */
     getCostSummary(eventId: string): Promise<any>;
     /**
+     * Get cost by ID
+     */
+    getCostById(costId: string): Promise<Cost | null>;
+    /**
+     * Duplicate cost
+     */
+    duplicateCost(costId: string, data?: {
+        eventId?: string;
+        description?: string;
+    }): Promise<Cost>;
+    /**
+     * Get budget by ID
+     */
+    getBudgetById(budgetId: string): Promise<Budget | null>;
+    /**
+     * Update budget
+     */
+    updateBudget(budgetId: string, data: {
+        allocatedAmount?: number;
+        category?: string;
+        currency?: string;
+    }): Promise<Budget>;
+    /**
+     * Delete budget
+     */
+    deleteBudget(budgetId: string): Promise<void>;
+    /**
+     * Duplicate budget
+     */
+    duplicateBudget(budgetId: string, data?: {
+        eventId?: string;
+        category?: string;
+    }): Promise<Budget>;
+    /**
      * Check budget and emit warnings
      */
     private checkBudget;

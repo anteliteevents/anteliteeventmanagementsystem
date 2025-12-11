@@ -184,6 +184,38 @@ router.post('/:id/activate', auth_1.authenticate, async (req, res) => {
     }
 });
 /**
+ * Get policy by ID
+ * GET /api/policies/:id
+ */
+router.get('/:id', auth_1.authenticate, async (req, res) => {
+    try {
+        if (!feature_flags_1.featureFlags.enabled('policies')) {
+            return res.status(503).json({
+                success: false,
+                error: { code: 'MODULE_DISABLED', message: 'Policies module is disabled' }
+            });
+        }
+        const policy = await policies_service_1.default.getPolicyById(req.params.id);
+        if (!policy) {
+            return res.status(404).json({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'Policy not found' }
+            });
+        }
+        res.json({
+            success: true,
+            data: policy
+        });
+    }
+    catch (error) {
+        console.error('Error getting policy:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: error.message }
+        });
+    }
+});
+/**
  * Deactivate policy (Admin only)
  * POST /api/policies/:id/deactivate
  */
@@ -209,6 +241,71 @@ router.post('/:id/deactivate', auth_1.authenticate, async (req, res) => {
     }
     catch (error) {
         console.error('Error deactivating policy:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: error.message }
+        });
+    }
+});
+/**
+ * Delete policy (Admin only)
+ * DELETE /api/policies/:id
+ */
+router.delete('/:id', auth_1.authenticate, async (req, res) => {
+    try {
+        if (!feature_flags_1.featureFlags.enabled('policies')) {
+            return res.status(503).json({
+                success: false,
+                error: { code: 'MODULE_DISABLED', message: 'Policies module is disabled' }
+            });
+        }
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                error: { code: 'FORBIDDEN', message: 'Admin access required' }
+            });
+        }
+        await policies_service_1.default.deletePolicy(req.params.id);
+        res.json({
+            success: true,
+            message: 'Policy deleted successfully'
+        });
+    }
+    catch (error) {
+        console.error('Error deleting policy:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: error.message }
+        });
+    }
+});
+/**
+ * Duplicate policy (Admin only)
+ * POST /api/policies/:id/duplicate
+ */
+router.post('/:id/duplicate', auth_1.authenticate, async (req, res) => {
+    try {
+        if (!feature_flags_1.featureFlags.enabled('policies')) {
+            return res.status(503).json({
+                success: false,
+                error: { code: 'MODULE_DISABLED', message: 'Policies module is disabled' }
+            });
+        }
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                error: { code: 'FORBIDDEN', message: 'Admin access required' }
+            });
+        }
+        const policy = await policies_service_1.default.duplicatePolicy(req.params.id, req.body);
+        res.status(201).json({
+            success: true,
+            data: policy,
+            message: 'Policy duplicated successfully'
+        });
+    }
+    catch (error) {
+        console.error('Error duplicating policy:', error);
         res.status(500).json({
             success: false,
             error: { code: 'INTERNAL_ERROR', message: error.message }

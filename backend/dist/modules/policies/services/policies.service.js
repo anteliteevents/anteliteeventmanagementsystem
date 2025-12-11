@@ -147,6 +147,52 @@ class PoliciesService {
         });
         return policy;
     }
+    /**
+     * Get policy by ID
+     */
+    async getPolicyById(policyId) {
+        const query = `
+      SELECT p.*, u.first_name || ' ' || u.last_name as created_by_name
+      FROM policies p
+      LEFT JOIN users u ON p.created_by = u.id
+      WHERE p.id = $1
+    `;
+        const result = await database_1.default.query(query, [policyId]);
+        if (result.rows.length === 0)
+            return null;
+        return this.mapPolicy(result.rows[0]);
+    }
+    /**
+     * Delete policy
+     */
+    async deletePolicy(policyId) {
+        const query = `DELETE FROM policies WHERE id = $1`;
+        await database_1.default.query(query, [policyId]);
+        await event_bus_1.eventBus.emit('policy.deleted', {
+            policyId,
+        });
+    }
+    /**
+     * Duplicate policy
+     */
+    async duplicatePolicy(policyId, data) {
+        const originalPolicy = await this.getPolicyById(policyId);
+        if (!originalPolicy) {
+            throw new Error('Policy not found');
+        }
+        // Increment version if not provided
+        const versionParts = originalPolicy.version.split('.');
+        const newVersion = data?.version || `${versionParts[0]}.${parseInt(versionParts[1] || '0') + 1}`;
+        return await this.createPolicy({
+            title: data?.title || `${originalPolicy.title} (Copy)`,
+            content: originalPolicy.content,
+            category: originalPolicy.category,
+            version: newVersion,
+            effectiveDate: originalPolicy.effectiveDate,
+            expiresAt: originalPolicy.expiresAt,
+            createdBy: originalPolicy.createdBy,
+        });
+    }
     mapPolicy(row) {
         return {
             id: row.id,

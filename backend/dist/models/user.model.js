@@ -144,6 +144,60 @@ class UserModel {
     `;
         await database_1.default.query(query, [role, id]);
     }
+    /**
+     * Update user
+     */
+    async update(id, userData) {
+        const updates = [];
+        const values = [];
+        let paramIndex = 1;
+        if (userData.firstName !== undefined) {
+            updates.push(`first_name = $${paramIndex}`);
+            values.push(userData.firstName);
+            paramIndex++;
+        }
+        if (userData.lastName !== undefined) {
+            updates.push(`last_name = $${paramIndex}`);
+            values.push(userData.lastName);
+            paramIndex++;
+        }
+        if (userData.companyName !== undefined) {
+            updates.push(`company_name = $${paramIndex}`);
+            values.push(userData.companyName);
+            paramIndex++;
+        }
+        if (userData.phone !== undefined) {
+            updates.push(`phone = $${paramIndex}`);
+            values.push(userData.phone);
+            paramIndex++;
+        }
+        if (userData.email !== undefined) {
+            updates.push(`email = $${paramIndex}`);
+            values.push(userData.email);
+            paramIndex++;
+        }
+        if (updates.length === 0) {
+            return;
+        }
+        updates.push(`updated_at = NOW()`);
+        values.push(id);
+        const query = `
+      UPDATE users
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+    `;
+        await database_1.default.query(query, values);
+    }
+    /**
+     * Delete user
+     */
+    async delete(id) {
+        const query = `
+      DELETE FROM users
+      WHERE id = $1
+    `;
+        await database_1.default.query(query, [id]);
+    }
 }
 exports.default = new UserModel();
 //# sourceMappingURL=user.model.js.map

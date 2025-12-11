@@ -51,6 +51,21 @@ declare class PoliciesService {
      * Deactivate policy
      */
     deactivatePolicy(policyId: string): Promise<Policy>;
+    /**
+     * Get policy by ID
+     */
+    getPolicyById(policyId: string): Promise<Policy | null>;
+    /**
+     * Delete policy
+     */
+    deletePolicy(policyId: string): Promise<void>;
+    /**
+     * Duplicate policy
+     */
+    duplicatePolicy(policyId: string, data?: {
+        title?: string;
+        version?: string;
+    }): Promise<Policy>;
     private mapPolicy;
 }
 declare const _default: PoliciesService;

@@ -63,6 +63,29 @@ declare class ProposalsService {
      */
     getTemplates(category?: string): Promise<ProposalTemplate[]>;
     /**
+     * Get proposal by ID
+     */
+    getProposalById(proposalId: string): Promise<Proposal | null>;
+    /**
+     * Update proposal
+     */
+    updateProposal(proposalId: string, data: {
+        title?: string;
+        description?: string;
+        templateId?: string;
+    }): Promise<Proposal>;
+    /**
+     * Delete proposal
+     */
+    deleteProposal(proposalId: string): Promise<void>;
+    /**
+     * Duplicate proposal
+     */
+    duplicateProposal(proposalId: string, data?: {
+        title?: string;
+        eventId?: string;
+    }): Promise<Proposal>;
+    /**
      * Create template
      */
     createTemplate(data: {
@@ -70,6 +93,30 @@ declare class ProposalsService {
         description?: string;
         content: string;
         category?: string;
+    }): Promise<ProposalTemplate>;
+    /**
+     * Get template by ID
+     */
+    getTemplateById(templateId: string): Promise<ProposalTemplate | null>;
+    /**
+     * Update template
+     */
+    updateTemplate(templateId: string, data: {
+        name?: string;
+        description?: string;
+        content?: string;
+        category?: string;
+        isActive?: boolean;
+    }): Promise<ProposalTemplate>;
+    /**
+     * Delete template
+     */
+    deleteTemplate(templateId: string): Promise<void>;
+    /**
+     * Duplicate template
+     */
+    duplicateTemplate(templateId: string, data?: {
+        name?: string;
     }): Promise<ProposalTemplate>;
     private mapProposal;
     private mapTemplate;

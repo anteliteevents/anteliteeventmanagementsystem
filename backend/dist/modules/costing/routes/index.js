@@ -221,6 +221,71 @@ router.get('/budget/event/:eventId', auth_1.authenticate, async (req, res) => {
     }
 });
 /**
+ * Get cost by ID
+ * GET /api/costing/costs/:id
+ */
+router.get('/costs/:id', auth_1.authenticate, async (req, res) => {
+    try {
+        if (!feature_flags_1.featureFlags.enabled('costing')) {
+            return res.status(503).json({
+                success: false,
+                error: { code: 'MODULE_DISABLED', message: 'Costing module is disabled' }
+            });
+        }
+        const cost = await costing_service_1.default.getCostById(req.params.id);
+        if (!cost) {
+            return res.status(404).json({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'Cost not found' }
+            });
+        }
+        res.json({
+            success: true,
+            data: cost
+        });
+    }
+    catch (error) {
+        console.error('Error getting cost:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: error.message }
+        });
+    }
+});
+/**
+ * Duplicate cost
+ * POST /api/costing/costs/:id/duplicate
+ */
+router.post('/costs/:id/duplicate', auth_1.authenticate, async (req, res) => {
+    try {
+        if (!feature_flags_1.featureFlags.enabled('costing')) {
+            return res.status(503).json({
+                success: false,
+                error: { code: 'MODULE_DISABLED', message: 'Costing module is disabled' }
+            });
+        }
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                error: { code: 'FORBIDDEN', message: 'Admin access required' }
+            });
+        }
+        const cost = await costing_service_1.default.duplicateCost(req.params.id, req.body);
+        res.status(201).json({
+            success: true,
+            data: cost,
+            message: 'Cost duplicated successfully'
+        });
+    }
+    catch (error) {
+        console.error('Error duplicating cost:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: error.message }
+        });
+    }
+});
+/**
  * Get cost summary
  * GET /api/costing/summary/event/:eventId
  */
@@ -240,6 +305,135 @@ router.get('/summary/event/:eventId', auth_1.authenticate, async (req, res) => {
     }
     catch (error) {
         console.error('Error getting cost summary:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: error.message }
+        });
+    }
+});
+/**
+ * Get budget by ID
+ * GET /api/costing/budget/:id
+ */
+router.get('/budget/:id', auth_1.authenticate, async (req, res) => {
+    try {
+        if (!feature_flags_1.featureFlags.enabled('costing')) {
+            return res.status(503).json({
+                success: false,
+                error: { code: 'MODULE_DISABLED', message: 'Costing module is disabled' }
+            });
+        }
+        const budget = await costing_service_1.default.getBudgetById(req.params.id);
+        if (!budget) {
+            return res.status(404).json({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'Budget not found' }
+            });
+        }
+        res.json({
+            success: true,
+            data: budget
+        });
+    }
+    catch (error) {
+        console.error('Error getting budget:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: error.message }
+        });
+    }
+});
+/**
+ * Update budget
+ * PUT /api/costing/budget/:id
+ */
+router.put('/budget/:id', auth_1.authenticate, async (req, res) => {
+    try {
+        if (!feature_flags_1.featureFlags.enabled('costing')) {
+            return res.status(503).json({
+                success: false,
+                error: { code: 'MODULE_DISABLED', message: 'Costing module is disabled' }
+            });
+        }
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                error: { code: 'FORBIDDEN', message: 'Admin access required' }
+            });
+        }
+        const budget = await costing_service_1.default.updateBudget(req.params.id, req.body);
+        res.json({
+            success: true,
+            data: budget
+        });
+    }
+    catch (error) {
+        console.error('Error updating budget:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: error.message }
+        });
+    }
+});
+/**
+ * Delete budget
+ * DELETE /api/costing/budget/:id
+ */
+router.delete('/budget/:id', auth_1.authenticate, async (req, res) => {
+    try {
+        if (!feature_flags_1.featureFlags.enabled('costing')) {
+            return res.status(503).json({
+                success: false,
+                error: { code: 'MODULE_DISABLED', message: 'Costing module is disabled' }
+            });
+        }
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                error: { code: 'FORBIDDEN', message: 'Admin access required' }
+            });
+        }
+        await costing_service_1.default.deleteBudget(req.params.id);
+        res.json({
+            success: true,
+            message: 'Budget deleted successfully'
+        });
+    }
+    catch (error) {
+        console.error('Error deleting budget:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: error.message }
+        });
+    }
+});
+/**
+ * Duplicate budget
+ * POST /api/costing/budget/:id/duplicate
+ */
+router.post('/budget/:id/duplicate', auth_1.authenticate, async (req, res) => {
+    try {
+        if (!feature_flags_1.featureFlags.enabled('costing')) {
+            return res.status(503).json({
+                success: false,
+                error: { code: 'MODULE_DISABLED', message: 'Costing module is disabled' }
+            });
+        }
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                error: { code: 'FORBIDDEN', message: 'Admin access required' }
+            });
+        }
+        const budget = await costing_service_1.default.duplicateBudget(req.params.id, req.body);
+        res.status(201).json({
+            success: true,
+            data: budget,
+            message: 'Budget duplicated successfully'
+        });
+    }
+    catch (error) {
+        console.error('Error duplicating budget:', error);
         res.status(500).json({
             success: false,
             error: { code: 'INTERNAL_ERROR', message: error.message }

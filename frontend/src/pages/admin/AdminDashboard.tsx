@@ -75,53 +75,88 @@ const AdminDashboard: React.FC = () => {
   const loadOverviewData = async () => {
     try {
       setOverviewLoading(true);
+      setLoading(true); // Ensure loading state is set
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-      const eventsRes = await api.get('/events');
+      // Add timeout wrapper for API calls
+      const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number = 5000): Promise<T> => {
+        return Promise.race([
+          promise,
+          new Promise<T>((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+          )
+        ]);
+      };
+
+      // Load events and health check in parallel
+      const [eventsRes, healthRes] = await Promise.all([
+        withTimeout(api.get('/events'), 10000),
+        fetch(`${process.env.REACT_APP_API_URL || 'https://anteliteeventssystem.onrender.com'}/health`).catch(() => null)
+      ]);
+
       const events = eventsRes.data?.data || [];
-      
-      // Health check is at root level, not /api/health
-      const healthRes = await fetch(`${process.env.REACT_APP_API_URL || 'https://anteliteeventssystem.onrender.com'}/health`).catch(() => null);
       const health = healthRes ? await healthRes.json().catch(() => ({})) : {};
 
-      // Limit to first 6 events for quick dashboard rendering
-      const targetEvents = events.slice(0, 6);
+      // Limit to first 3 events for faster dashboard rendering
+      const targetEvents = events.slice(0, 3);
 
+      // Load event stats with timeout - process sequentially to avoid overwhelming the server
       const eventStats = await Promise.all(
         targetEvents.map(async (event: any) => {
-          const [stats, costSummaryRes, proposalsRes] = await Promise.all([
-            EventService.getEventStatistics(event.id).catch(() => null),
-            api.get(`/costing/summary/event/${event.id}`, { headers }).catch(() => null),
-            api.get(`/proposals/event/${event.id}`, { headers }).catch(() => null),
-          ]);
+          try {
+            const [stats, costSummaryRes, proposalsRes] = await Promise.all([
+              withTimeout(EventService.getEventStatistics(event.id), 5000).catch(() => null),
+              withTimeout(api.get(`/costing/summary/event/${event.id}`, { headers }), 3000).catch(() => null),
+              withTimeout(api.get(`/proposals/event/${event.id}`, { headers }), 3000).catch(() => null),
+            ]);
 
-          const statistics: any = stats || {};
-          const costSummary = costSummaryRes?.data?.data || null;
-          const proposals = proposalsRes?.data?.data || [];
+            const statistics: any = stats || {};
+            const costSummary = costSummaryRes?.data?.data || null;
+            const proposals = proposalsRes?.data?.data || [];
 
-          return {
-            id: event.id,
-            name: event.name,
-            revenue: statistics?.totalRevenue || 0,
-            totalBooths: statistics?.totalBooths || 0,
-            bookedBooths: statistics?.bookedBooths || 0,
-            availableBooths: statistics?.availableBooths || 0,
-            occupancy:
-              statistics?.totalBooths && statistics.totalBooths > 0
-                ? Math.round((statistics.bookedBooths / statistics.totalBooths) * 100)
-                : 0,
-            proposalsCount: proposals.length,
-            proposalsApproved: proposals.filter((p: any) => p.status === 'approved').length,
-            proposalsRejected: proposals.filter((p: any) => p.status === 'rejected').length,
-            budget: costSummary?.totalBudget || 0,
-            spent: costSummary?.totalSpent || 0,
-          };
+            return {
+              id: event.id,
+              name: event.name,
+              revenue: statistics?.totalRevenue || 0,
+              totalBooths: statistics?.totalBooths || 0,
+              bookedBooths: statistics?.bookedBooths || 0,
+              availableBooths: statistics?.availableBooths || 0,
+              occupancy:
+                statistics?.totalBooths && statistics.totalBooths > 0
+                  ? Math.round((statistics.bookedBooths / statistics.totalBooths) * 100)
+                  : 0,
+              proposalsCount: proposals.length,
+              proposalsApproved: proposals.filter((p: any) => p.status === 'approved').length,
+              proposalsRejected: proposals.filter((p: any) => p.status === 'rejected').length,
+              budget: costSummary?.totalBudget || 0,
+              spent: costSummary?.totalSpent || 0,
+            };
+          } catch (err) {
+            console.warn(`Error loading stats for event ${event.id}:`, err);
+            return {
+              id: event.id,
+              name: event.name,
+              revenue: 0,
+              totalBooths: 0,
+              bookedBooths: 0,
+              availableBooths: 0,
+              occupancy: 0,
+              proposalsCount: 0,
+              proposalsApproved: 0,
+              proposalsRejected: 0,
+              budget: 0,
+              spent: 0,
+            };
+          }
         })
       );
 
-      const transactionsRes = await api.get('/payments/transactions', { headers }).catch(() => ({ data: { data: [] } }));
-      const invoicesRes = await api.get('/payments/invoices', { headers }).catch(() => ({ data: { data: [] } }));
+      // Load payments data with timeout
+      const [transactionsRes, invoicesRes] = await Promise.all([
+        withTimeout(api.get('/payments/transactions', { headers }), 5000).catch(() => ({ data: { data: [] } })),
+        withTimeout(api.get('/payments/invoices', { headers }), 5000).catch(() => ({ data: { data: [] } }))
+      ]);
       const transactions = transactionsRes.data?.data || transactionsRes.data || [];
       const invoices = invoicesRes.data?.data || invoicesRes.data || [];
 

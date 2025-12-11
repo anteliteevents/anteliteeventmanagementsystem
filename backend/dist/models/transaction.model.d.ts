@@ -32,6 +32,10 @@ declare class TransactionModel {
      * Update transaction with Stripe payment intent ID
      */
     updateStripePaymentIntent(id: string, paymentIntentId: string): Promise<Transaction>;
+    /**
+     * Get all transactions (most recent first)
+     */
+    findAll(): Promise<Transaction[]>;
 }
 declare const _default: TransactionModel;
 export default _default;

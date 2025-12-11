@@ -1,3 +1,10 @@
+/**
+ * Booth Sales Controller
+ *
+ * Handles all booth sales operations including reservations, bookings, and payments.
+ *
+ * @module controllers/boothSales
+ */
 import { Response } from 'express';
 import { AuthRequest } from '../types';
 declare class BoothSalesController {

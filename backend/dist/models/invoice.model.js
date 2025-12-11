@@ -120,6 +120,14 @@ class InvoiceModel {
         const result = await database_1.default.query(query, [pdfUrl, id]);
         return result.rows[0];
     }
+    /**
+     * Get all invoices (most recent first)
+     */
+    async findAll() {
+        const query = 'SELECT * FROM invoices ORDER BY created_at DESC';
+        const result = await database_1.default.query(query);
+        return result.rows;
+    }
 }
 exports.default = new InvoiceModel();
 //# sourceMappingURL=invoice.model.js.map

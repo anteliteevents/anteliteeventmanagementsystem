@@ -155,8 +155,8 @@ class BoothSalesController {
             parseFloat(booth.price.toString()),
             reservation.id
           );
-        } catch (emailError) {
-          logger.warn('Error sending reservation email', { error: emailError.message, userId: req.user.id, boothId });
+        } catch (emailError: any) {
+          logger.warn('Error sending reservation email', { error: emailError?.message || String(emailError), userId: req.user.id, boothId });
           // Don't fail the request if email fails
         }
       }
@@ -287,8 +287,8 @@ class BoothSalesController {
             },
           });
           stripeCustomerId = customer.id;
-        } catch (error) {
-          logger.error('Error creating Stripe customer', { error: error.message, stack: error.stack, userId: req.user?.id });
+        } catch (error: any) {
+          logger.error('Error creating Stripe customer', { error: error?.message || String(error), stack: error?.stack, userId: req.user?.id });
         }
 
         // Create payment intent
@@ -473,8 +473,8 @@ class BoothSalesController {
             transaction.id,
             invoice.invoiceNumber
           );
-        } catch (emailError) {
-          logger.warn('Error sending payment confirmation email', { error: emailError.message, userId: req.user?.id, transactionId });
+        } catch (emailError: any) {
+          logger.warn('Error sending payment confirmation email', { error: emailError?.message || String(emailError), userId: req.user?.id, transactionId: transaction.id });
         }
       }
 

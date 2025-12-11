@@ -41,6 +41,10 @@ declare class InvoiceModel {
      * Update invoice PDF URL
      */
     updatePdfUrl(id: string, pdfUrl: string): Promise<Invoice>;
+    /**
+     * Get all invoices (most recent first)
+     */
+    findAll(): Promise<Invoice[]>;
 }
 declare const _default: InvoiceModel;
 export default _default;

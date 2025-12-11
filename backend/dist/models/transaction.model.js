@@ -105,6 +105,20 @@ class TransactionModel {
         }
         return result.rows[0];
     }
+    /**
+     * Get all transactions (most recent first)
+     */
+    async findAll() {
+        const query = 'SELECT * FROM transactions ORDER BY created_at DESC';
+        const result = await database_1.default.query(query);
+        return result.rows.map((row) => {
+            if (row.metadata) {
+                row.metadata =
+                    typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata;
+            }
+            return row;
+        });
+    }
 }
 exports.default = new TransactionModel();
 //# sourceMappingURL=transaction.model.js.map

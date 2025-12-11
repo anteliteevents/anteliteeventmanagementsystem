@@ -1,4 +1,11 @@
 "use strict";
+/**
+ * Authentication Controller
+ *
+ * Handles user registration, login, and authentication-related operations.
+ *
+ * @module controllers/auth
+ */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -8,10 +15,28 @@ const express_validator_1 = require("express-validator");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 const auth_middleware_1 = require("../middleware/auth.middleware");
+const logger_1 = __importDefault(require("../config/logger"));
+const constants_1 = require("../config/constants");
 class AuthController {
     /**
      * Register a new user
+     *
+     * Creates a new user account with email, password, and optional profile information.
+     * Validates input, checks for existing users, hashes password, and returns JWT token.
+     *
+     * @route POST /api/auth/register
+     * @param {Request} req - Express request object containing user registration data
+     * @param {Response} res - Express response object
+     * @returns {Promise<void>}
+     *
+     * @example
      * POST /api/auth/register
+     * {
+     *   "email": "user@example.com",
+     *   "password": "securepassword",
+     *   "firstName": "John",
+     *   "lastName": "Doe"
+     * }
      */
     async register(req, res) {
         try {
@@ -41,7 +66,7 @@ class AuthController {
                 return;
             }
             // Hash password
-            const passwordHash = await bcryptjs_1.default.hash(password, 10);
+            const passwordHash = await bcryptjs_1.default.hash(password, constants_1.AUTH_CONSTANTS.PASSWORD_HASH_ROUNDS);
             // Create user
             const user = await user_model_1.default.create({
                 email,
@@ -76,7 +101,7 @@ class AuthController {
             });
         }
         catch (error) {
-            console.error('Registration error:', error);
+            logger_1.default.error('Registration error', { error: error.message, stack: error.stack, email: req.body.email });
             res.status(500).json({
                 success: false,
                 error: {
@@ -88,7 +113,21 @@ class AuthController {
     }
     /**
      * Login user
+     *
+     * Authenticates a user with email and password, returns JWT token on success.
+     * Validates credentials and returns user information along with access token.
+     *
+     * @route POST /api/auth/login
+     * @param {Request} req - Express request object containing email and password
+     * @param {Response} res - Express response object
+     * @returns {Promise<void>}
+     *
+     * @example
      * POST /api/auth/login
+     * {
+     *   "email": "user@example.com",
+     *   "password": "userpassword"
+     * }
      */
     async login(req, res) {
         try {
@@ -164,7 +203,7 @@ class AuthController {
             });
         }
         catch (error) {
-            console.error('Login error:', error);
+            logger_1.default.error('Login error', { error: error.message, stack: error.stack, email: req.body.email });
             res.status(500).json({
                 success: false,
                 error: {
@@ -208,7 +247,7 @@ class AuthController {
             });
         }
         catch (error) {
-            console.error('Get me error:', error);
+            logger_1.default.error('Get me error', { error: error.message, stack: error.stack, userId: req.user?.id });
             res.status(500).json({
                 success: false,
                 error: {

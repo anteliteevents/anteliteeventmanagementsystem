@@ -1,4 +1,11 @@
 "use strict";
+/**
+ * Booth Sales Controller
+ *
+ * Handles all booth sales operations including reservations, bookings, and payments.
+ *
+ * @module controllers/boothSales
+ */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -12,6 +19,7 @@ const event_model_1 = __importDefault(require("../models/event.model"));
 const stripe_service_1 = __importDefault(require("../services/stripe.service"));
 const email_service_1 = __importDefault(require("../services/email.service"));
 const socket_io_1 = require("../config/socket.io");
+const logger_1 = __importDefault(require("../config/logger"));
 class BoothSalesController {
     /**
      * Get available booths for an event
@@ -45,7 +53,7 @@ class BoothSalesController {
             res.json(response);
         }
         catch (error) {
-            console.error('Error getting available booths:', error);
+            logger_1.default.error('Error getting available booths', { error: error.message, stack: error.stack, eventId: req.query.eventId });
             res.status(500).json({
                 success: false,
                 error: {
@@ -132,7 +140,7 @@ class BoothSalesController {
                     await email_service_1.default.sendReservationConfirmation(user.email, `${user.firstName} ${user.lastName}`, booth.boothNumber, event.name, parseFloat(booth.price.toString()), reservation.id);
                 }
                 catch (emailError) {
-                    console.error('Error sending reservation email:', emailError);
+                    logger_1.default.warn('Error sending reservation email', { error: emailError?.message || String(emailError), userId: req.user.id, boothId });
                     // Don't fail the request if email fails
                 }
             }
@@ -150,7 +158,7 @@ class BoothSalesController {
             res.json(response);
         }
         catch (error) {
-            console.error('Error reserving booth:', error);
+            logger_1.default.error('Error reserving booth', { error: error.message, stack: error.stack, userId: req.user?.id, boothId: req.body.boothId });
             res.status(500).json({
                 success: false,
                 error: {
@@ -253,7 +261,7 @@ class BoothSalesController {
                     stripeCustomerId = customer.id;
                 }
                 catch (error) {
-                    console.error('Error creating Stripe customer:', error);
+                    logger_1.default.error('Error creating Stripe customer', { error: error?.message || String(error), stack: error?.stack, userId: req.user?.id });
                 }
                 // Create payment intent
                 const amountInCents = Math.round(parseFloat(reservation.price.toString()) * 100);
@@ -323,7 +331,7 @@ class BoothSalesController {
             res.json(response);
         }
         catch (error) {
-            console.error('Error creating purchase:', error);
+            logger_1.default.error('Error creating purchase', { error: error.message, stack: error.stack, userId: req.user?.id, boothIds: req.body.boothIds });
             res.status(500).json({
                 success: false,
                 error: {
@@ -417,7 +425,7 @@ class BoothSalesController {
                     await email_service_1.default.sendPaymentConfirmation(user.email, `${user.firstName} ${user.lastName}`, reservationWithDetails.boothNumber, reservationWithDetails.eventName, transaction.amount, transaction.id, invoice.invoiceNumber);
                 }
                 catch (emailError) {
-                    console.error('Error sending payment confirmation email:', emailError);
+                    logger_1.default.warn('Error sending payment confirmation email', { error: emailError?.message || String(emailError), userId: req.user?.id, transactionId: transaction.id });
                 }
             }
             // Emit real-time update
@@ -438,7 +446,7 @@ class BoothSalesController {
             res.json(response);
         }
         catch (error) {
-            console.error('Error confirming payment:', error);
+            logger_1.default.error('Error confirming payment', { error: error.message, stack: error.stack, transactionId: req.body.transactionId });
             res.status(500).json({
                 success: false,
                 error: {
@@ -469,7 +477,7 @@ class BoothSalesController {
             res.json(response);
         }
         catch (error) {
-            console.error('Error getting reservations:', error);
+            logger_1.default.error('Error getting reservations', { error: error.message, stack: error.stack, userId: req.user?.id });
             res.status(500).json({
                 success: false,
                 error: {

@@ -15,11 +15,13 @@ const stripeWebhook_routes_1 = __importDefault(require("./routes/stripeWebhook.r
 const event_routes_1 = __importDefault(require("./routes/event.routes"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const users_routes_1 = __importDefault(require("./routes/users.routes"));
+const payments_routes_1 = __importDefault(require("./routes/payments.routes"));
 // Modular Architecture Imports
 const module_loader_1 = require("./core/module-loader");
 const gateway_1 = require("./api/gateway");
 const feature_flags_1 = require("./core/feature-flags");
 const handlers_1 = require("./modules/sales/websocket/handlers");
+const customOrigins_1 = require("./config/customOrigins");
 // Load environment variables
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -28,11 +30,7 @@ const httpServer = (0, http_1.createServer)(app);
 const io = (0, socket_io_1.setupSocketIO)(httpServer);
 exports.io = io;
 // Middleware
-const allowedOrigins = (process.env.CORS_ORIGIN || [
-    'http://localhost:3000',
-    'https://anteliteeventssystem-2s8af5wgz-anteliteevents-projects.vercel.app',
-    'https://anteliteeventssystem.vercel.app'
-].join(','))
+const allowedOrigins = (process.env.CORS_ORIGIN || customOrigins_1.defaultAllowedOrigins.join(','))
     .split(',')
     .map(o => o.trim())
     .filter(Boolean);
@@ -74,6 +72,7 @@ app.use('/api/booths', boothSales_routes_1.default); // Sales operations
 app.use('/api/admin/booths', booths_routes_1.default); // CRUD operations
 app.use('/api/events', event_routes_1.default);
 app.use('/api/users', users_routes_1.default);
+app.use('/api/payments', payments_routes_1.default);
 // Initialize Modular Architecture
 async function initializeModules() {
     try {

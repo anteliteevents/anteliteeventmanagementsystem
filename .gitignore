@@ -1,6 +1,18 @@
-# Personal notes (do not commit)
+# Personal notes and temporary files
 notepad
 notepad.txt
+*.tmp
+*.temp
+*_FIX_*.md
+*_TEST_*.md
+*_NOW.md
+*_RESULTS.md
+FIX_*.sql
+test-*.ps1
+test-*.sh
+verify-*.sh
+reset-*.ps1
+fix-*.sh
 
 # Dependencies
 node_modules/

@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import AuthService from '../../services/auth.service';
+import api from '../../services/api';
 import './UsersManagementView.css';
 
 interface User {
@@ -25,6 +26,17 @@ const UsersManagementView: React.FC = () => {
   const [filter, setFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    companyName: '',
+    phone: '',
+    role: 'exhibitor' as 'admin' | 'exhibitor'
+  });
 
   useEffect(() => {
     loadUsers();
@@ -33,18 +45,13 @@ const UsersManagementView: React.FC = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const token = AuthService.getStoredToken();
-      const response = await fetch('http://localhost:3001/api/users', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (data.success) {
-        setUsers(data.data || []);
+      const response = await api.get('/users');
+      if (response.data.success) {
+        setUsers(response.data.data || []);
       }
     } catch (error: any) {
       console.error('Error loading users:', error);
+      alert('Error loading users: ' + (error.response?.data?.error?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -79,25 +86,99 @@ const UsersManagementView: React.FC = () => {
     }
 
     try {
-      const token = AuthService.getStoredToken();
-      const response = await fetch(`http://localhost:3001/api/users/${userId}/role`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ role: newRole }),
-      });
-      
-      if (response.ok) {
-        await loadUsers();
-        if (selectedUser?.id === userId) {
-          setSelectedUser({ ...selectedUser, role: newRole });
-        }
+      await api.put(`/users/${userId}/role`, { role: newRole });
+      await loadUsers();
+      if (selectedUser?.id === userId) {
+        setSelectedUser({ ...selectedUser, role: newRole });
       }
     } catch (error: any) {
-      alert('Error updating role: ' + error.message);
+      alert('Error updating role: ' + (error.response?.data?.error?.message || error.message));
     }
+  };
+
+  const handleCreateUser = async () => {
+    try {
+      if (!formData.email || !formData.password || !formData.firstName || !formData.lastName) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      await api.post('/users', formData);
+      await loadUsers();
+      setShowCreateModal(false);
+      setFormData({
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        companyName: '',
+        phone: '',
+        role: 'exhibitor'
+      });
+      alert('User created successfully!');
+    } catch (error: any) {
+      alert('Error creating user: ' + (error.response?.data?.error?.message || error.message));
+    }
+  };
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+    try {
+      await api.put(`/users/${selectedUser.id}`, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        companyName: formData.companyName,
+        phone: formData.phone,
+        email: formData.email
+      });
+      await loadUsers();
+      setShowEditModal(false);
+      setSelectedUser(null);
+      alert('User updated successfully!');
+    } catch (error: any) {
+      alert('Error updating user: ' + (error.response?.data?.error?.message || error.message));
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedUser.firstName} ${selectedUser.lastName}? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await api.delete(`/users/${selectedUser.id}`);
+      await loadUsers();
+      setSelectedUser(null);
+      alert('User deleted successfully!');
+    } catch (error: any) {
+      alert('Error deleting user: ' + (error.response?.data?.error?.message || error.message));
+    }
+  };
+
+  const handleDuplicateUser = async () => {
+    if (!selectedUser) return;
+    try {
+      const newEmail = prompt('Enter email for the duplicate user:', `${selectedUser.email.split('@')[0]}_copy@${selectedUser.email.split('@')[1]}`);
+      if (!newEmail) return;
+      const response = await api.post(`/users/${selectedUser.id}/duplicate`, { email: newEmail });
+      await loadUsers();
+      alert('User duplicated successfully!');
+    } catch (error: any) {
+      alert('Error duplicating user: ' + (error.response?.data?.error?.message || error.message));
+    }
+  };
+
+  const openEditModal = () => {
+    if (!selectedUser) return;
+    setFormData({
+      email: selectedUser.email,
+      password: '',
+      firstName: selectedUser.firstName,
+      lastName: selectedUser.lastName,
+      companyName: selectedUser.companyName || '',
+      phone: selectedUser.phone || '',
+      role: selectedUser.role
+    });
+    setShowEditModal(true);
   };
 
   const filteredUsers = users.filter(user => {
@@ -129,6 +210,24 @@ const UsersManagementView: React.FC = () => {
     <div className="users-management-view">
       {/* Header */}
       <div className="view-header">
+        <div className="header-actions" style={{ marginBottom: '1rem' }}>
+          <button
+            className="btn-create"
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: 'bold'
+            }}
+          >
+            ➕ Create New User
+          </button>
+        </div>
         <div className="header-stats">
           <div className="stat-box">
             <div className="stat-value">{stats.total}</div>
@@ -343,16 +442,184 @@ const UsersManagementView: React.FC = () => {
                 <button
                   className="btn-action-full"
                   onClick={() => handleToggleActive(selectedUser.id, selectedUser.isActive)}
+                  style={{ marginBottom: '0.5rem' }}
                 >
                   {selectedUser.isActive ? '❌ Deactivate User' : '✅ Activate User'}
                 </button>
                 <button
                   className="btn-action-full"
                   onClick={() => handleChangeRole(selectedUser.id, selectedUser.role === 'admin' ? 'exhibitor' : 'admin')}
+                  style={{ marginBottom: '0.5rem' }}
                 >
                   🔄 Change Role to {selectedUser.role === 'admin' ? 'Exhibitor' : 'Admin'}
                 </button>
+                <button
+                  className="btn-action-full"
+                  onClick={openEditModal}
+                  style={{ marginBottom: '0.5rem', backgroundColor: '#2196F3' }}
+                >
+                  ✏️ Edit User
+                </button>
+                <button
+                  className="btn-action-full"
+                  onClick={handleDuplicateUser}
+                  style={{ marginBottom: '0.5rem', backgroundColor: '#FF9800' }}
+                >
+                  📋 Duplicate User
+                </button>
+                <button
+                  className="btn-action-full"
+                  onClick={handleDeleteUser}
+                  style={{ backgroundColor: '#f44336' }}
+                >
+                  🗑️ Delete User
+                </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create New User</h2>
+              <button className="btn-close" onClick={() => setShowCreateModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password *</label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>First Name *</label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Last Name *</label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Company Name</label>
+                <input
+                  type="text"
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Role *</label>
+                <select
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'exhibitor' })}
+                >
+                  <option value="exhibitor">Exhibitor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowCreateModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={handleCreateUser}>Create User</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit User</h2>
+              <button className="btn-close" onClick={() => setShowEditModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>First Name *</label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Last Name *</label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Company Name</label>
+                <input
+                  type="text"
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowEditModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={handleUpdateUser}>Update User</button>
             </div>
           </div>
         </div>

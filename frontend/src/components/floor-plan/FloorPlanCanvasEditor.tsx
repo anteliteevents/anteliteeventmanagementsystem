@@ -8,7 +8,7 @@ import './FloorPlanCanvasEditor.css';
 
 export interface CanvasShape {
   id: string;
-  type: 'rectangle';
+  type: 'rectangle' | 'circle' | 'polygon';
   x: number;
   y: number;
   width: number;

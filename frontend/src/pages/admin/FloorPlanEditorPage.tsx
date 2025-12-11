@@ -34,7 +34,11 @@ const FloorPlanEditorPage: React.FC = () => {
       setLoading(true);
       const plan = await FloorPlanService.getFloorPlanById(id);
       setFloorPlan(plan);
-      setShapes(plan.layoutData.shapes || []);
+      // Filter to only rectangle shapes for now (canvas editor only supports rectangles)
+      const rectangleShapes = (plan.layoutData.shapes || []).filter(
+        (shape): shape is CanvasShape => shape.type === 'rectangle'
+      );
+      setShapes(rectangleShapes);
       setImagePreview(plan.imageUrl || '');
 
       // Load event

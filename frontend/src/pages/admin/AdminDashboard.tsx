@@ -14,6 +14,21 @@ import BoothsManagementView from './BoothsManagementView';
 import UsersManagementView from './UsersManagementView';
 import ReportsViewComponent from './ReportsView';
 import SettingsViewComponent from './SettingsView';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  LineChart,
+  Line,
+  CartesianGrid,
+} from 'recharts';
 import './AdminDashboard.css';
 import './shared-components.css';
 
@@ -26,6 +41,8 @@ const AdminDashboard: React.FC = () => {
   const [proposalsData, setProposalsData] = useState<any>(null);
   const [monitoringData, setMonitoringData] = useState<any>(null);
   const [policiesData, setPoliciesData] = useState<any>(null);
+  const [overviewData, setOverviewData] = useState<any>(null);
+  const [overviewLoading, setOverviewLoading] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -52,11 +69,111 @@ const AdminDashboard: React.FC = () => {
   }, [activeView]);
 
   const loadDashboardData = async () => {
+    await loadOverviewData();
+  };
+
+  const loadOverviewData = async () => {
     try {
-      setLoading(true);
-      // Load initial data
+      setOverviewLoading(true);
+      const token = AuthService.getStoredToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
+      const [eventsRes, healthRes] = await Promise.all([
+        api.get('/events'),
+        api.get('/health'),
+      ]);
+
+      const events = eventsRes.data?.data || [];
+      const health = healthRes.data || {};
+
+      // Limit to first 6 events for quick dashboard rendering
+      const targetEvents = events.slice(0, 6);
+
+      const eventStats = await Promise.all(
+        targetEvents.map(async (event: any) => {
+          const [stats, costSummaryRes, proposalsRes] = await Promise.all([
+            EventService.getEventStatistics(event.id).catch(() => null),
+            api.get(`/costing/summary/event/${event.id}`, { headers }).catch(() => null),
+            api.get(`/proposals/event/${event.id}`, { headers }).catch(() => null),
+          ]);
+
+          const statistics = stats || {};
+          const costSummary = costSummaryRes?.data?.data || null;
+          const proposals = proposalsRes?.data?.data || [];
+
+          return {
+            id: event.id,
+            name: event.name,
+            revenue: statistics.totalRevenue || 0,
+            totalBooths: statistics.totalBooths || 0,
+            bookedBooths: statistics.bookedBooths || 0,
+            availableBooths: statistics.availableBooths || 0,
+            occupancy:
+              statistics.totalBooths && statistics.totalBooths > 0
+                ? Math.round((statistics.bookedBooths / statistics.totalBooths) * 100)
+                : 0,
+            proposalsCount: proposals.length,
+            proposalsApproved: proposals.filter((p: any) => p.status === 'approved').length,
+            proposalsRejected: proposals.filter((p: any) => p.status === 'rejected').length,
+            budget: costSummary?.totalBudget || 0,
+            spent: costSummary?.totalSpent || 0,
+          };
+        })
+      );
+
+      const transactionsRes = await api.get('/payments/transactions', { headers }).catch(() => ({ data: { data: [] } }));
+      const invoicesRes = await api.get('/payments/invoices', { headers }).catch(() => ({ data: { data: [] } }));
+      const transactions = transactionsRes.data?.data || transactionsRes.data || [];
+      const invoices = invoicesRes.data?.data || invoicesRes.data || [];
+
+      const paymentStatusCounts = transactions.reduce((acc: any, t: any) => {
+        const status = t.status || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+
+      const invoiceStatusCounts = invoices.reduce((acc: any, i: any) => {
+        const status = i.status || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+
+      const totals = {
+        totalEvents: events.length,
+        activeEvents: events.filter((e: any) => e.status === 'active' || e.status === 'published').length,
+        totalRevenue: eventStats.reduce((sum, s) => sum + (s.revenue || 0), 0),
+        totalBooths: eventStats.reduce((sum, s) => sum + (s.totalBooths || 0), 0),
+        bookedBooths: eventStats.reduce((sum, s) => sum + (s.bookedBooths || 0), 0),
+        availableBooths: eventStats.reduce((sum, s) => sum + (s.availableBooths || 0), 0),
+        occupancy:
+          eventStats.reduce((sum, s) => sum + (s.totalBooths ? (s.bookedBooths / s.totalBooths) * 100 : 0), 0) /
+          (eventStats.length || 1),
+        proposals: eventStats.reduce((sum, s) => sum + (s.proposalsCount || 0), 0),
+        proposalsApproved: eventStats.reduce((sum, s) => sum + (s.proposalsApproved || 0), 0),
+        proposalsRejected: eventStats.reduce((sum, s) => sum + (s.proposalsRejected || 0), 0),
+        paidInvoices: invoiceStatusCounts['paid'] || 0,
+        pendingInvoices: invoiceStatusCounts['pending'] || 0,
+        totalInvoices: invoices.length,
+        transactions: transactions.length,
+        totalBudget: eventStats.reduce((sum, s) => sum + (s.budget || 0), 0),
+        totalSpent: eventStats.reduce((sum, s) => sum + (s.spent || 0), 0),
+      };
+
+      const overview = {
+        health,
+        totals,
+        revenueByEvent: eventStats.map((s) => ({ name: s.name, revenue: s.revenue })),
+        occupancyByEvent: eventStats.map((s) => ({ name: s.name, occupancy: s.occupancy })),
+        budgetVsSpent: eventStats.map((s) => ({ name: s.name, budget: s.budget, spent: s.spent })),
+        paymentStatus: Object.entries(paymentStatusCounts).map(([name, value]) => ({ name, value })),
+        invoiceStatus: Object.entries(invoiceStatusCounts).map(([name, value]) => ({ name, value })),
+      };
+
+      setOverviewData(overview);
+    } catch (error) {
+      console.error('Error loading overview data:', error);
     } finally {
-      setLoading(false);
+      setOverviewLoading(false);
     }
   };
 
@@ -446,7 +563,13 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="admin-content">
-          {activeView === 'overview' && <OverviewView />}
+          {activeView === 'overview' && (
+            <OverviewView
+              data={overviewData}
+              loading={overviewLoading}
+              onRefresh={loadOverviewData}
+            />
+          )}
           {activeView === 'sales' && <SalesDepartmentView data={salesData} onRefresh={loadSalesData} />}
           {activeView === 'payments' && <PaymentsDepartmentView data={paymentsData} onRefresh={loadPaymentsData} />}
           {activeView === 'costing' && <CostingDepartmentView data={costingData} onRefresh={loadCostingData} />}
@@ -464,57 +587,161 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-// Overview View Component
-const OverviewView: React.FC = () => {
-  const [stats, setStats] = useState<any>(null);
+// Overview View Component (Advanced)
+const OverviewView: React.FC<{ data: any; loading: boolean; onRefresh: () => void }> = ({
+  data,
+  loading,
+  onRefresh,
+}) => {
+  if (loading || !data) {
+    return (
+      <div className="overview-view">
+        <div className="loading">Loading dashboard data...</div>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    loadOverviewStats();
-  }, []);
-
-  const loadOverviewStats = async () => {
-    try {
-      const [eventsRes, systemRes] = await Promise.all([
-        api.get('/events'),
-        api.get('/health')
-      ]);
-
-      const eventsData = eventsRes.data || {};
-      const systemData = systemRes.data || {};
-
-      setStats({
-        totalEvents: eventsData.data?.length || 0,
-        activeModules: systemData.modules?.length || 0,
-        systemStatus: systemData.status
-      });
-    } catch (error) {
-      console.error('Error loading overview:', error);
-    }
-  };
+  const totals = data.totals || {};
+  const revenueChart = data.revenueByEvent || [];
+  const occupancyChart = data.occupancyByEvent || [];
+  const paymentStatus = data.paymentStatus || [];
+  const budgetVsSpent = data.budgetVsSpent || [];
+  const COLORS = ['#5C7AEA', '#4AD991', '#F8C76B', '#F76C6C', '#9B59B6', '#1ABC9C'];
 
   return (
-    <div className="overview-view">
+    <div className="overview-view advanced-overview">
+      <div className="overview-actions">
+        <div className="system-status-pill">
+          <span className={`status-dot ${data.health?.status === 'ok' ? 'ok' : 'warn'}`} />
+          System: {data.health?.status || 'Unknown'}
+        </div>
+        <button className="btn-secondary" onClick={onRefresh}>
+          🔄 Refresh
+        </button>
+      </div>
+
       <div className="stats-grid">
-        <div className="stat-card">
+        <div className="stat-card kpi">
+          <div className="stat-icon">💰</div>
+          <div className="stat-content">
+            <div className="stat-label">Total Revenue</div>
+            <div className="stat-value">${(totals.totalRevenue || 0).toLocaleString()}</div>
+          </div>
+        </div>
+        <div className="stat-card kpi">
           <div className="stat-icon">📅</div>
           <div className="stat-content">
-            <div className="stat-value">{stats?.totalEvents || 0}</div>
-            <div className="stat-label">Total Events</div>
+            <div className="stat-label">Events / Active</div>
+            <div className="stat-value">
+              {totals.totalEvents || 0} / {totals.activeEvents || 0}
+            </div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon">🔧</div>
+        <div className="stat-card kpi">
+          <div className="stat-icon">🏢</div>
           <div className="stat-content">
-            <div className="stat-value">{stats?.activeModules || 0}</div>
-            <div className="stat-label">Active Modules</div>
+            <div className="stat-label">Booths (Booked / Total)</div>
+            <div className="stat-value">
+              {totals.bookedBooths || 0} / {totals.totalBooths || 0}
+            </div>
+            <div className="stat-sub">Occupancy: {Math.round(totals.occupancy || 0)}%</div>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon">✅</div>
+        <div className="stat-card kpi">
+          <div className="stat-icon">💳</div>
           <div className="stat-content">
-            <div className="stat-value">{stats?.systemStatus || 'Unknown'}</div>
-            <div className="stat-label">System Status</div>
+            <div className="stat-label">Invoices (Paid / Pending)</div>
+            <div className="stat-value">
+              {totals.paidInvoices || 0} / {totals.pendingInvoices || 0}
+            </div>
+            <div className="stat-sub">Total Invoices: {totals.totalInvoices || 0}</div>
           </div>
+        </div>
+        <div className="stat-card kpi">
+          <div className="stat-icon">📄</div>
+          <div className="stat-content">
+            <div className="stat-label">Proposals (Approved / Rejected)</div>
+            <div className="stat-value">
+              {totals.proposalsApproved || 0} / {totals.proposalsRejected || 0}
+            </div>
+            <div className="stat-sub">Total: {totals.proposals || 0}</div>
+          </div>
+        </div>
+        <div className="stat-card kpi">
+          <div className="stat-icon">📈</div>
+          <div className="stat-content">
+            <div className="stat-label">Budget vs Spent</div>
+            <div className="stat-value">
+              ${Math.round(totals.totalSpent || 0).toLocaleString()} / $
+              {Math.round(totals.totalBudget || 0).toLocaleString()}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="charts-grid">
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Revenue by Event</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={revenueChart}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="revenue" fill="#5C7AEA" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Occupancy by Event</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={occupancyChart}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis unit="%" />
+              <Tooltip />
+              <Line type="monotone" dataKey="occupancy" stroke="#4AD991" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Payment Status</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie data={paymentStatus} dataKey="value" nameKey="name" outerRadius={90} label>
+                {paymentStatus.map((entry: any, index: number) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Legend />
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Budget vs Spent (per Event)</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={budgetVsSpent}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="budget" fill="#9B59B6" name="Budget" />
+              <Bar dataKey="spent" fill="#F76C6C" name="Spent" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

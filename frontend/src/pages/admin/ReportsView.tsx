@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import EventService from '../../services/event.service';
-import AuthService from '../../services/auth.service';
+import api from '../../services/api';
 import { Event } from '../../types';
 import './ReportsView.css';
 
@@ -28,6 +28,17 @@ const ReportsView: React.FC = () => {
       await loadReportData(allEvents);
     } catch (error: any) {
       console.error('Error loading data:', error);
+      // Set default data on error to prevent infinite loading
+      setReportData({
+        totalEvents: 0,
+        activeEvents: 0,
+        totalRevenue: 0,
+        totalBooths: 0,
+        bookedBooths: 0,
+        occupancyRate: 0,
+        salesData: {},
+        paymentsData: [],
+      });
     } finally {
       setLoading(false);
     }
@@ -35,51 +46,78 @@ const ReportsView: React.FC = () => {
 
   const loadReportData = async (eventsList: Event[]) => {
     try {
-      const token = AuthService.getStoredToken();
-      
-      // Get sales data
-      const salesRes = await fetch('http://localhost:3001/api/sales/summary', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const salesData = salesRes.ok ? await salesRes.json() : { data: {} };
-
-      // Get payment data
-      const paymentsRes = await fetch('http://localhost:3001/api/payments/transactions', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const paymentsData = paymentsRes.ok ? await paymentsRes.json() : { data: [] };
-
-      // Calculate metrics
-      const totalRevenue = paymentsData.data?.reduce((sum: number, t: any) => 
-        sum + (parseFloat(t.amount || 0)), 0) || 0;
-      
-      // Calculate booth statistics by fetching booths for each event
+      // Initialize with default values
+      let salesData: any = {
+        totalRevenue: 0,
+        totalBooked: 0,
+        pendingReservations: 0
+      };
+      let paymentsData: any[] = [];
+      let totalRevenue = 0;
       let totalBooths = 0;
       let bookedBooths = 0;
-      
-      for (const event of eventsList) {
+      let availableBooths = 0;
+
+      // Get payment data with timeout
+      try {
+        const paymentsRes = await Promise.race([
+          api.get('/payments/transactions'),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+        ]) as any;
+        if (paymentsRes?.data?.success) {
+          paymentsData = paymentsRes.data.data || [];
+          totalRevenue = paymentsData.reduce((sum: number, t: any) => 
+            sum + (parseFloat(t.amount || 0)), 0);
+        }
+      } catch (error) {
+        console.warn('Payments data not available:', error);
+      }
+
+      // Calculate booth statistics by fetching booths for each event (with timeout per event)
+      // Limit to first 10 events to avoid too many API calls
+      const boothPromises = eventsList.slice(0, 10).map(async (event) => {
         try {
-          const boothsRes = await fetch(`http://localhost:3001/api/sales/booths/available?eventId=${event.id}`);
-          if (boothsRes.ok) {
-            const boothsData = await boothsRes.json();
-            if (boothsData.success && boothsData.data) {
-              const booths = boothsData.data;
-              totalBooths += booths.length;
-              bookedBooths += booths.filter((b: any) => b.status === 'booked').length;
-            }
+          const boothsRes = await Promise.race([
+            api.get(`/sales/booths/available?eventId=${event.id}`),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000))
+          ]) as any;
+          if (boothsRes?.data?.success && boothsRes.data.data) {
+            const booths = boothsRes.data.data;
+            const booked = booths.filter((b: any) => b.status === 'booked').length;
+            const available = booths.filter((b: any) => b.status === 'available').length;
+            const reserved = booths.filter((b: any) => b.status === 'reserved').length;
+            return {
+              total: booths.length,
+              booked,
+              available,
+              reserved
+            };
           }
         } catch (error) {
-          // Continue if one event fails
-          console.error(`Error fetching booths for event ${event.id}:`, error);
+          console.warn(`Error fetching booths for event ${event.id}:`, error);
         }
-      }
+        return { total: 0, booked: 0, available: 0, reserved: 0 };
+      });
+
+      const boothResults = await Promise.all(boothPromises);
+      boothResults.forEach(result => {
+        totalBooths += result.total;
+        bookedBooths += result.booked;
+        availableBooths += result.available;
+      });
+
+      // Calculate sales data from booth statistics
+      salesData = {
+        totalRevenue,
+        totalBooked: bookedBooths,
+        pendingReservations: boothResults.reduce((sum, r) => sum + r.reserved, 0),
+        totalBooths,
+        availableBooths
+      };
       
       const occupancyRate = totalBooths > 0 ? (bookedBooths / totalBooths) * 100 : 0;
 
+      // Always set reportData, even if some calls failed
       setReportData({
         totalEvents: eventsList.length,
         activeEvents: eventsList.filter(e => e.status === 'active').length,
@@ -87,11 +125,26 @@ const ReportsView: React.FC = () => {
         totalBooths,
         bookedBooths,
         occupancyRate,
-        salesData: salesData.data || {},
-        paymentsData: paymentsData.data || [],
+        salesData: salesData || {},
+        paymentsData: paymentsData || [],
       });
     } catch (error: any) {
       console.error('Error loading report data:', error);
+      // Set default data on error to prevent infinite loading
+      setReportData({
+        totalEvents: eventsList.length,
+        activeEvents: eventsList.filter(e => e.status === 'active').length,
+        totalRevenue: 0,
+        totalBooths: 0,
+        bookedBooths: 0,
+        occupancyRate: 0,
+        salesData: {
+          totalRevenue: 0,
+          totalBooked: 0,
+          pendingReservations: 0
+        },
+        paymentsData: [],
+      });
     }
   };
 

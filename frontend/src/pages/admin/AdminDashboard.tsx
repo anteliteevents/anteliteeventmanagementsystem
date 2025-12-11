@@ -4,32 +4,30 @@
  * Comprehensive interactive admin backend with department views
  */
 
+/**
+ * Admin Dashboard Component
+ * 
+ * Main admin dashboard container with modular view system.
+ * Manages data loading and view switching for all admin sections.
+ * 
+ * @component
+ */
+
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import AuthService, { User } from '../../services/auth.service';
 import EventService from '../../services/event.service';
 import api from '../../services/api';
+import AdminSidebar from '../../components/admin/AdminSidebar';
+import AdminHeader from '../../components/admin/AdminHeader';
+import OverviewView from './components/OverviewView';
 import EventsManagementView from './EventsManagementView';
 import BoothsManagementView from './BoothsManagementView';
 import UsersManagementView from './UsersManagementView';
 import ReportsViewComponent from './ReportsView';
 import SettingsViewComponent from './SettingsView';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  LineChart,
-  Line,
-  CartesianGrid,
-} from 'recharts';
+import { API_TIMEOUTS, DASHBOARD_CONSTANTS } from '../../constants';
 import './AdminDashboard.css';
+import './AdminDashboard.enhanced.css';
 import './shared-components.css';
 
 const AdminDashboard: React.FC = () => {
@@ -80,7 +78,7 @@ const AdminDashboard: React.FC = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
       // Add timeout wrapper for API calls
-      const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number = 5000): Promise<T> => {
+      const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number = API_TIMEOUTS.DEFAULT): Promise<T> => {
         return Promise.race([
           promise,
           new Promise<T>((_, reject) => 
@@ -91,24 +89,24 @@ const AdminDashboard: React.FC = () => {
 
       // Load events and health check in parallel
       const [eventsRes, healthRes] = await Promise.all([
-        withTimeout(api.get('/events'), 10000),
+        withTimeout(api.get('/events'), API_TIMEOUTS.DEFAULT),
         fetch(`${process.env.REACT_APP_API_URL || 'https://anteliteeventssystem.onrender.com'}/health`).catch(() => null)
       ]);
 
       const events = eventsRes.data?.data || [];
       const health = healthRes ? await healthRes.json().catch(() => ({})) : {};
 
-      // Limit to first 3 events for faster dashboard rendering
-      const targetEvents = events.slice(0, 3);
+      // Limit to configured number of events for faster dashboard rendering
+      const targetEvents = events.slice(0, DASHBOARD_CONSTANTS.MAX_EVENTS_FOR_OVERVIEW);
 
       // Load event stats with timeout - process sequentially to avoid overwhelming the server
       const eventStats = await Promise.all(
         targetEvents.map(async (event: any) => {
           try {
             const [stats, costSummaryRes, proposalsRes] = await Promise.all([
-              withTimeout(EventService.getEventStatistics(event.id), 5000).catch(() => null),
-              withTimeout(api.get(`/costing/summary/event/${event.id}`, { headers }), 3000).catch(() => null),
-              withTimeout(api.get(`/proposals/event/${event.id}`, { headers }), 3000).catch(() => null),
+              withTimeout(EventService.getEventStatistics(event.id), API_TIMEOUTS.EVENT_STATISTICS).catch(() => null),
+              withTimeout(api.get(`/costing/summary/event/${event.id}`, { headers }), API_TIMEOUTS.COSTING_SUMMARY).catch(() => null),
+              withTimeout(api.get(`/proposals/event/${event.id}`, { headers }), API_TIMEOUTS.PROPOSALS).catch(() => null),
             ]);
 
             const statistics: any = stats || {};
@@ -154,8 +152,8 @@ const AdminDashboard: React.FC = () => {
 
       // Load payments data with timeout
       const [transactionsRes, invoicesRes] = await Promise.all([
-        withTimeout(api.get('/payments/transactions', { headers }), 5000).catch(() => ({ data: { data: [] } })),
-        withTimeout(api.get('/payments/invoices', { headers }), 5000).catch(() => ({ data: { data: [] } }))
+        withTimeout(api.get('/payments/transactions', { headers }), API_TIMEOUTS.PAYMENTS).catch(() => ({ data: { data: [] } })),
+        withTimeout(api.get('/payments/invoices', { headers }), API_TIMEOUTS.PAYMENTS).catch(() => ({ data: { data: [] } }))
       ]);
       const transactions = transactionsRes.data?.data || transactionsRes.data || [];
       const invoices = invoicesRes.data?.data || invoicesRes.data || [];
@@ -453,150 +451,18 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="admin-dashboard">
-      {/* Mobile Menu Toggle */}
-      <button 
-        className="mobile-menu-toggle"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        aria-label="Toggle menu"
-      >
-        {sidebarOpen ? '✕' : '☰'}
-      </button>
-
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="sidebar-overlay active"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar Navigation */}
-      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <h2>Admin Panel</h2>
-          <div className="user-info">
-            <div className="user-avatar">{user?.firstName?.[0]}{user?.lastName?.[0]}</div>
-            <div className="user-details">
-              <div className="user-name">{user?.firstName} {user?.lastName}</div>
-              <div className="user-role">{user?.role}</div>
-            </div>
-          </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button
-            className={`nav-item ${activeView === 'overview' ? 'active' : ''}`}
-            onClick={() => handleViewChange('overview')}
-          >
-            📊 Overview
-          </button>
-          <button
-            className={`nav-item ${activeView === 'sales' ? 'active' : ''}`}
-            onClick={() => handleViewChange('sales')}
-          >
-            💰 Sales Department
-          </button>
-          <button
-            className={`nav-item ${activeView === 'events' ? 'active' : ''}`}
-            onClick={() => handleViewChange('events')}
-          >
-            📅 Events
-          </button>
-          <button
-            className={`nav-item ${activeView === 'booths' ? 'active' : ''}`}
-            onClick={() => handleViewChange('booths')}
-          >
-            🏢 Booths
-          </button>
-          <button
-            className={`nav-item ${activeView === 'users' ? 'active' : ''}`}
-            onClick={() => handleViewChange('users')}
-          >
-            👥 Users
-          </button>
-          <button
-            className={`nav-item ${activeView === 'reports' ? 'active' : ''}`}
-            onClick={() => handleViewChange('reports')}
-          >
-            📈 Reports
-          </button>
-          <button
-            className={`nav-item ${activeView === 'payments' ? 'active' : ''}`}
-            onClick={() => handleViewChange('payments')}
-          >
-            💳 Payments
-          </button>
-          <button
-            className={`nav-item ${activeView === 'costing' ? 'active' : ''}`}
-            onClick={() => handleViewChange('costing')}
-          >
-            💰 Costing
-          </button>
-          <button
-            className={`nav-item ${activeView === 'proposals' ? 'active' : ''}`}
-            onClick={() => handleViewChange('proposals')}
-          >
-            📄 Proposals
-          </button>
-          <button
-            className={`nav-item ${activeView === 'monitoring' ? 'active' : ''}`}
-            onClick={() => handleViewChange('monitoring')}
-          >
-            📊 Monitoring
-          </button>
-          <button
-            className={`nav-item ${activeView === 'policies' ? 'active' : ''}`}
-            onClick={() => handleViewChange('policies')}
-          >
-            📋 Policies
-          </button>
-          <button
-            className={`nav-item ${activeView === 'reports' ? 'active' : ''}`}
-            onClick={() => handleViewChange('reports')}
-          >
-            📈 Reports
-          </button>
-          <button
-            className={`nav-item ${activeView === 'settings' ? 'active' : ''}`}
-            onClick={() => handleViewChange('settings')}
-          >
-            ⚙️ Settings
-          </button>
-        </nav>
-
-        <div className="sidebar-footer">
-          <button onClick={handleLogout} className="btn-logout">
-            🚪 Logout
-          </button>
-        </div>
-      </aside>
+      <AdminSidebar
+        user={user}
+        activeView={activeView}
+        sidebarOpen={sidebarOpen}
+        onViewChange={handleViewChange}
+        onLogout={handleLogout}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+      />
 
       {/* Main Content */}
       <main className="admin-main">
-        <div className="admin-header">
-          <h1>
-            {activeView === 'overview' && '📊 Dashboard Overview'}
-            {activeView === 'sales' && '💰 Sales Department'}
-            {activeView === 'payments' && '💳 Payments Department'}
-            {activeView === 'costing' && '💰 Costing Department'}
-            {activeView === 'proposals' && '📄 Proposals Department'}
-            {activeView === 'monitoring' && '📊 Monitoring Department'}
-            {activeView === 'policies' && '📋 Policies Department'}
-            {activeView === 'events' && '📅 Events Management'}
-            {activeView === 'booths' && '🏢 Booth Management'}
-            {activeView === 'users' && '👥 User Management'}
-            {activeView === 'reports' && '📈 Reports & Analytics'}
-            {activeView === 'settings' && '⚙️ System Settings'}
-          </h1>
-          <div className="header-actions">
-            <Link to="/events/new" className="btn-primary">
-              ➕ Create Event
-            </Link>
-            <Link to="/modular-test" className="btn-secondary">
-              🧪 Test Center
-            </Link>
-          </div>
-        </div>
+        <AdminHeader activeView={activeView} />
 
         <div className="admin-content">
           {activeView === 'overview' && (
@@ -623,166 +489,7 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-// Overview View Component (Advanced)
-const OverviewView: React.FC<{ data: any; loading: boolean; onRefresh: () => void }> = ({
-  data,
-  loading,
-  onRefresh,
-}) => {
-  if (loading || !data) {
-    return (
-      <div className="overview-view">
-        <div className="loading">Loading dashboard data...</div>
-      </div>
-    );
-  }
-
-  const totals = data.totals || {};
-  const revenueChart = data.revenueByEvent || [];
-  const occupancyChart = data.occupancyByEvent || [];
-  const paymentStatus = data.paymentStatus || [];
-  const budgetVsSpent = data.budgetVsSpent || [];
-  const COLORS = ['#5C7AEA', '#4AD991', '#F8C76B', '#F76C6C', '#9B59B6', '#1ABC9C'];
-
-  return (
-    <div className="overview-view advanced-overview">
-      <div className="overview-actions">
-        <div className="system-status-pill">
-          <span className={`status-dot ${data.health?.status === 'ok' ? 'ok' : 'warn'}`} />
-          System: {data.health?.status || 'Unknown'}
-        </div>
-        <button className="btn-secondary" onClick={onRefresh}>
-          🔄 Refresh
-        </button>
-      </div>
-
-      <div className="stats-grid">
-        <div className="stat-card kpi">
-          <div className="stat-icon">💰</div>
-          <div className="stat-content">
-            <div className="stat-label">Total Revenue</div>
-            <div className="stat-value">${(totals.totalRevenue || 0).toLocaleString()}</div>
-          </div>
-        </div>
-        <div className="stat-card kpi">
-          <div className="stat-icon">📅</div>
-          <div className="stat-content">
-            <div className="stat-label">Events / Active</div>
-            <div className="stat-value">
-              {totals.totalEvents || 0} / {totals.activeEvents || 0}
-            </div>
-          </div>
-        </div>
-        <div className="stat-card kpi">
-          <div className="stat-icon">🏢</div>
-          <div className="stat-content">
-            <div className="stat-label">Booths (Booked / Total)</div>
-            <div className="stat-value">
-              {totals.bookedBooths || 0} / {totals.totalBooths || 0}
-            </div>
-            <div className="stat-sub">Occupancy: {Math.round(totals.occupancy || 0)}%</div>
-          </div>
-        </div>
-        <div className="stat-card kpi">
-          <div className="stat-icon">💳</div>
-          <div className="stat-content">
-            <div className="stat-label">Invoices (Paid / Pending)</div>
-            <div className="stat-value">
-              {totals.paidInvoices || 0} / {totals.pendingInvoices || 0}
-            </div>
-            <div className="stat-sub">Total Invoices: {totals.totalInvoices || 0}</div>
-          </div>
-        </div>
-        <div className="stat-card kpi">
-          <div className="stat-icon">📄</div>
-          <div className="stat-content">
-            <div className="stat-label">Proposals (Approved / Rejected)</div>
-            <div className="stat-value">
-              {totals.proposalsApproved || 0} / {totals.proposalsRejected || 0}
-            </div>
-            <div className="stat-sub">Total: {totals.proposals || 0}</div>
-          </div>
-        </div>
-        <div className="stat-card kpi">
-          <div className="stat-icon">📈</div>
-          <div className="stat-content">
-            <div className="stat-label">Budget vs Spent</div>
-            <div className="stat-value">
-              ${Math.round(totals.totalSpent || 0).toLocaleString()} / $
-              {Math.round(totals.totalBudget || 0).toLocaleString()}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="charts-grid">
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Revenue by Event</h3>
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={revenueChart}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="revenue" fill="#5C7AEA" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Occupancy by Event</h3>
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={occupancyChart}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis unit="%" />
-              <Tooltip />
-              <Line type="monotone" dataKey="occupancy" stroke="#4AD991" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Payment Status</h3>
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie data={paymentStatus} dataKey="value" nameKey="name" outerRadius={90} label>
-                {paymentStatus.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Legend />
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Budget vs Spent (per Event)</h3>
-          </div>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={budgetVsSpent}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="budget" fill="#9B59B6" name="Budget" />
-              <Bar dataKey="spent" fill="#F76C6C" name="Spent" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  );
-};
+// OverviewView component has been moved to ./components/OverviewView.tsx
 
 // Sales Department View - COMPREHENSIVE
 const SalesDepartmentView: React.FC<{ data: any; onRefresh: () => void }> = ({ data, onRefresh }) => {

@@ -1,13 +1,39 @@
+/**
+ * Authentication Controller
+ * 
+ * Handles user registration, login, and authentication-related operations.
+ * 
+ * @module controllers/auth
+ */
+
 import { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import UserModel from '../models/user.model';
 import { generateToken } from '../middleware/auth.middleware';
+import logger from '../config/logger';
+import { AUTH_CONSTANTS } from '../config/constants';
 
 class AuthController {
   /**
    * Register a new user
+   * 
+   * Creates a new user account with email, password, and optional profile information.
+   * Validates input, checks for existing users, hashes password, and returns JWT token.
+   * 
+   * @route POST /api/auth/register
+   * @param {Request} req - Express request object containing user registration data
+   * @param {Response} res - Express response object
+   * @returns {Promise<void>}
+   * 
+   * @example
    * POST /api/auth/register
+   * {
+   *   "email": "user@example.com",
+   *   "password": "securepassword",
+   *   "firstName": "John",
+   *   "lastName": "Doe"
+   * }
    */
   async register(req: Request, res: Response): Promise<void> {
     try {
@@ -40,7 +66,7 @@ class AuthController {
       }
 
       // Hash password
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = await bcrypt.hash(password, AUTH_CONSTANTS.PASSWORD_HASH_ROUNDS);
 
       // Create user
       const user = await UserModel.create({
@@ -77,7 +103,7 @@ class AuthController {
         message: 'User registered successfully'
       });
     } catch (error: any) {
-      console.error('Registration error:', error);
+      logger.error('Registration error', { error: error.message, stack: error.stack, email: req.body.email });
       res.status(500).json({
         success: false,
         error: {
@@ -90,7 +116,21 @@ class AuthController {
 
   /**
    * Login user
+   * 
+   * Authenticates a user with email and password, returns JWT token on success.
+   * Validates credentials and returns user information along with access token.
+   * 
+   * @route POST /api/auth/login
+   * @param {Request} req - Express request object containing email and password
+   * @param {Response} res - Express response object
+   * @returns {Promise<void>}
+   * 
+   * @example
    * POST /api/auth/login
+   * {
+   *   "email": "user@example.com",
+   *   "password": "userpassword"
+   * }
    */
   async login(req: Request, res: Response): Promise<void> {
     try {
@@ -171,7 +211,7 @@ class AuthController {
         message: 'Login successful'
       });
     } catch (error: any) {
-      console.error('Login error:', error);
+      logger.error('Login error', { error: error.message, stack: error.stack, email: req.body.email });
       res.status(500).json({
         success: false,
         error: {
@@ -217,7 +257,7 @@ class AuthController {
         data: user
       });
     } catch (error: any) {
-      console.error('Get me error:', error);
+      logger.error('Get me error', { error: error.message, stack: error.stack, userId: req.user?.id });
       res.status(500).json({
         success: false,
         error: {

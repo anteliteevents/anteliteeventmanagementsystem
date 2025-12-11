@@ -1,5 +1,15 @@
+/**
+ * Database Configuration
+ * 
+ * PostgreSQL connection pool setup and management.
+ * 
+ * @module config/database
+ */
+
 import { Pool, PoolConfig } from 'pg';
 import dotenv from 'dotenv';
+import logger from './logger';
+import { DB_CONSTANTS } from './constants';
 
 dotenv.config();
 
@@ -13,9 +23,9 @@ const poolConfig: PoolConfig = {
   database: process.env.DB_NAME || 'antelite_events',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || '',
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000, // Increased timeout for remote connections
+  max: DB_CONSTANTS.MAX_CONNECTIONS,
+  idleTimeoutMillis: DB_CONSTANTS.IDLE_TIMEOUT_MS,
+  connectionTimeoutMillis: DB_CONSTANTS.CONNECTION_TIMEOUT_MS,
   ssl: useSSL ? { rejectUnauthorized: false } : false,
 };
 
@@ -32,22 +42,22 @@ const pool = new Pool(poolConfig);
 
 // Test connection on startup
 pool.on('connect', () => {
-  console.log('✅ Database connected');
+  logger.info('Database connected successfully');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected error on idle client', err);
+  logger.error('Unexpected error on idle database client', { error: err.message, stack: err.stack });
   process.exit(-1);
 });
 
 // Log connection config (without password)
-console.log('🔌 Database Config:', {
+logger.info('Database configuration initialized', {
   host: poolConfig.host,
   port: poolConfig.port,
   database: poolConfig.database,
   user: poolConfig.user,
   ssl: poolConfig.ssl,
-  hasPassword: !!poolConfig.password
+  hasPassword: !!poolConfig.password,
 });
 
 export default pool;

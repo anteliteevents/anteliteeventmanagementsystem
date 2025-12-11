@@ -1,3 +1,11 @@
+/**
+ * Booth Sales Controller
+ * 
+ * Handles all booth sales operations including reservations, bookings, and payments.
+ * 
+ * @module controllers/boothSales
+ */
+
 import { Response } from 'express';
 import { AuthRequest, ApiResponse } from '../types';
 import boothModel from '../models/booth.model';
@@ -9,6 +17,7 @@ import eventModel from '../models/event.model';
 import stripeService from '../services/stripe.service';
 import emailService from '../services/email.service';
 import { getIO } from '../config/socket.io';
+import logger from '../config/logger';
 
 class BoothSalesController {
   /**
@@ -43,7 +52,7 @@ class BoothSalesController {
       };
       res.json(response);
     } catch (error: any) {
-      console.error('Error getting available booths:', error);
+      logger.error('Error getting available booths', { error: error.message, stack: error.stack, eventId: req.query.eventId });
       res.status(500).json({
         success: false,
         error: {
@@ -147,7 +156,7 @@ class BoothSalesController {
             reservation.id
           );
         } catch (emailError) {
-          console.error('Error sending reservation email:', emailError);
+          logger.warn('Error sending reservation email', { error: emailError.message, userId: req.user.id, boothId });
           // Don't fail the request if email fails
         }
       }
@@ -166,7 +175,7 @@ class BoothSalesController {
       };
       res.json(response);
     } catch (error: any) {
-      console.error('Error reserving booth:', error);
+      logger.error('Error reserving booth', { error: error.message, stack: error.stack, userId: req.user?.id, boothId: req.body.boothId });
       res.status(500).json({
         success: false,
         error: {
@@ -279,7 +288,7 @@ class BoothSalesController {
           });
           stripeCustomerId = customer.id;
         } catch (error) {
-          console.error('Error creating Stripe customer:', error);
+          logger.error('Error creating Stripe customer', { error: error.message, stack: error.stack, userId: req.user?.id });
         }
 
         // Create payment intent
@@ -351,7 +360,7 @@ class BoothSalesController {
       };
       res.json(response);
     } catch (error: any) {
-      console.error('Error creating purchase:', error);
+      logger.error('Error creating purchase', { error: error.message, stack: error.stack, userId: req.user?.id, boothIds: req.body.boothIds });
       res.status(500).json({
         success: false,
         error: {
@@ -465,7 +474,7 @@ class BoothSalesController {
             invoice.invoiceNumber
           );
         } catch (emailError) {
-          console.error('Error sending payment confirmation email:', emailError);
+          logger.warn('Error sending payment confirmation email', { error: emailError.message, userId: req.user?.id, transactionId });
         }
       }
 
@@ -487,7 +496,7 @@ class BoothSalesController {
       };
       res.json(response);
     } catch (error: any) {
-      console.error('Error confirming payment:', error);
+      logger.error('Error confirming payment', { error: error.message, stack: error.stack, transactionId: req.body.transactionId });
       res.status(500).json({
         success: false,
         error: {
@@ -520,7 +529,7 @@ class BoothSalesController {
       };
       res.json(response);
     } catch (error: any) {
-      console.error('Error getting reservations:', error);
+      logger.error('Error getting reservations', { error: error.message, stack: error.stack, userId: req.user?.id });
       res.status(500).json({
         success: false,
         error: {

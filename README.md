@@ -250,3 +250,4 @@ npm test
 # anteliteevents
 # anteliteeventmanagementsystem
 # anteliteeventmanagementsystem
+# anteliteeventmanagementsystem

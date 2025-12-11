@@ -97,19 +97,19 @@ const AdminDashboard: React.FC = () => {
             api.get(`/proposals/event/${event.id}`, { headers }).catch(() => null),
           ]);
 
-          const statistics = stats || {};
+          const statistics: any = stats || {};
           const costSummary = costSummaryRes?.data?.data || null;
           const proposals = proposalsRes?.data?.data || [];
 
           return {
             id: event.id,
             name: event.name,
-            revenue: statistics.totalRevenue || 0,
-            totalBooths: statistics.totalBooths || 0,
-            bookedBooths: statistics.bookedBooths || 0,
-            availableBooths: statistics.availableBooths || 0,
+            revenue: statistics?.totalRevenue || 0,
+            totalBooths: statistics?.totalBooths || 0,
+            bookedBooths: statistics?.bookedBooths || 0,
+            availableBooths: statistics?.availableBooths || 0,
             occupancy:
-              statistics.totalBooths && statistics.totalBooths > 0
+              statistics?.totalBooths && statistics.totalBooths > 0
                 ? Math.round((statistics.bookedBooths / statistics.totalBooths) * 100)
                 : 0,
             proposalsCount: proposals.length,

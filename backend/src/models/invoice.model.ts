@@ -132,6 +132,15 @@ class InvoiceModel {
     const result = await pool.query(query, [pdfUrl, id]);
     return result.rows[0];
   }
+
+  /**
+   * Get all invoices (most recent first)
+   */
+  async findAll(): Promise<Invoice[]> {
+    const query = 'SELECT * FROM invoices ORDER BY created_at DESC';
+    const result = await pool.query(query);
+    return result.rows;
+  }
 }
 
 export default new InvoiceModel();

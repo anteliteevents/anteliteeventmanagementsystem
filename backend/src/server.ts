@@ -11,6 +11,7 @@ import stripeWebhookRoutes from './routes/stripeWebhook.routes';
 import eventRoutes from './routes/event.routes';
 import authRoutes from './routes/auth.routes';
 import usersRoutes from './routes/users.routes';
+import paymentsRoutes from './routes/payments.routes';
 
 // Modular Architecture Imports
 import { moduleLoader } from './core/module-loader';
@@ -85,6 +86,7 @@ app.use('/api/booths', boothSalesRoutes); // Sales operations
 app.use('/api/admin/booths', boothsRoutes); // CRUD operations
 app.use('/api/events', eventRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // Initialize Modular Architecture
 async function initializeModules() {

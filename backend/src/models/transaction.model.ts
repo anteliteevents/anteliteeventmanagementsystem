@@ -118,6 +118,21 @@ class TransactionModel {
     }
     return result.rows[0];
   }
+
+  /**
+   * Get all transactions (most recent first)
+   */
+  async findAll(): Promise<Transaction[]> {
+    const query = 'SELECT * FROM transactions ORDER BY created_at DESC';
+    const result = await pool.query(query);
+    return result.rows.map((row) => {
+      if (row.metadata) {
+        row.metadata =
+          typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata;
+      }
+      return row;
+    });
+  }
 }
 
 export default new TransactionModel();

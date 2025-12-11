@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AuthService, { User } from '../../services/auth.service';
 import EventService from '../../services/event.service';
+import api from '../../services/api';
 import EventsManagementView from './EventsManagementView';
 import BoothsManagementView from './BoothsManagementView';
 import UsersManagementView from './UsersManagementView';
@@ -64,15 +65,14 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
       // Load comprehensive sales data
       const events = await EventService.getAllEvents();
-      
+
       // Get sales statistics for each event
       const salesPromises = events.map(async (event) => {
         try {
-          const response = await fetch(`http://localhost:3001/api/events/${event.id}/statistics`);
-          const data = await response.json();
+          const statistics = await EventService.getEventStatistics(event.id);
           return {
             event,
-            statistics: data.data?.statistics || null
+            statistics
           };
         } catch {
           return { event, statistics: null };
@@ -80,18 +80,27 @@ const AdminDashboard: React.FC = () => {
       });
 
       const salesResults = await Promise.all(salesPromises);
-      
-      // Get all booths and reservations
-      const boothsResponse = await fetch('http://localhost:3001/api/sales/booths/available?eventId=' + events[0]?.id);
-      const boothsData = await boothsResponse.json();
-      
+
+      // Get available booths for first event (as sample)
+      let booths: any[] = [];
+      if (events[0]?.id) {
+        try {
+          const boothsResponse = await api.get('/booths/available', {
+            params: { eventId: events[0].id }
+          });
+          booths = boothsResponse.data?.data || boothsResponse.data || [];
+        } catch (err) {
+          console.warn('Booth fetch failed', err);
+        }
+      }
+
       setSalesData({
         events: salesResults,
         totalRevenue: salesResults.reduce((sum, item) => sum + (item.statistics?.totalRevenue || 0), 0),
         totalBooths: salesResults.reduce((sum, item) => sum + (item.statistics?.totalBooths || 0), 0),
         bookedBooths: salesResults.reduce((sum, item) => sum + (item.statistics?.bookedBooths || 0), 0),
         availableBooths: salesResults.reduce((sum, item) => sum + (item.statistics?.availableBooths || 0), 0),
-        booths: boothsData.success ? boothsData.data : []
+        booths
       });
     } catch (error: any) {
       console.error('Error loading sales data:', error);
@@ -104,24 +113,22 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       const token = AuthService.getStoredToken();
-      
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+
       // Get all transactions
-      const transactionsRes = await fetch('http://localhost:3001/api/payments/transactions', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const transactions = transactionsRes.ok ? await transactionsRes.json() : { data: [] };
-      
+      const transactionsRes = await api.get('/payments/transactions', { headers });
+      const transactions = transactionsRes.data || {};
+
       // Get all invoices
-      const invoicesRes = await fetch('http://localhost:3001/api/payments/invoices', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const invoices = invoicesRes.ok ? await invoicesRes.json() : { data: [] };
-      
-      const totalRevenue = transactions.data?.reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0) || 0;
+      const invoicesRes = await api.get('/payments/invoices', { headers });
+      const invoices = invoicesRes.data || {};
+
+      const totalRevenue =
+        transactions.data?.reduce((sum: number, t: any) => sum + (parseFloat(t.amount) || 0), 0) || 0;
       const completedPayments = transactions.data?.filter((t: any) => t.status === 'completed').length || 0;
       const pendingPayments = transactions.data?.filter((t: any) => t.status === 'pending').length || 0;
       const paidInvoices = invoices.data?.filter((i: any) => i.status === 'paid').length || 0;
-      
+
       setPaymentsData({
         transactions: transactions.data || [],
         invoices: invoices.data || [],
@@ -144,18 +151,15 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       const token = AuthService.getStoredToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
       const events = await EventService.getAllEvents();
       
       // Get cost summaries for all events
       const costPromises = events.map(async (event) => {
         try {
-          const response = await fetch(`http://localhost:3001/api/costing/summary/event/${event.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            return { event, summary: data.data || null };
-          }
+          const response = await api.get(`/costing/summary/event/${event.id}`, { headers });
+          const data = response.data;
+          return { event, summary: data.data || null };
         } catch {}
         return { event, summary: null };
       });
@@ -183,18 +187,15 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       const token = AuthService.getStoredToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
       const events = await EventService.getAllEvents();
       
       // Get proposals for all events
       const proposalPromises = events.map(async (event) => {
         try {
-          const response = await fetch(`http://localhost:3001/api/proposals/event/${event.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            return { event, proposals: data.data || [] };
-          }
+          const response = await api.get(`/proposals/event/${event.id}`, { headers });
+          const data = response.data;
+          return { event, proposals: data.data || [] };
         } catch {}
         return { event, proposals: [] };
       });
@@ -203,10 +204,8 @@ const AdminDashboard: React.FC = () => {
       const allProposals = proposalResults.flatMap(item => item.proposals);
       
       // Get templates
-      const templatesRes = await fetch('http://localhost:3001/api/proposals/templates', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const templates = templatesRes.ok ? await templatesRes.json() : { data: [] };
+      const templatesRes = await api.get('/proposals/templates', { headers });
+      const templates = templatesRes.data || { data: [] };
       
       setProposalsData({
         events: proposalResults,
@@ -229,18 +228,15 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       const token = AuthService.getStoredToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
       
       // Get performance summary
-      const performanceRes = await fetch('http://localhost:3001/api/monitoring/performance', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const performance = performanceRes.ok ? await performanceRes.json() : { data: {} };
+      const performanceRes = await api.get('/monitoring/performance', { headers });
+      const performance = performanceRes.data || { data: {} };
       
       // Get team activity
-      const activityRes = await fetch('http://localhost:3001/api/monitoring/activity', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const activity = activityRes.ok ? await activityRes.json() : { data: [] };
+      const activityRes = await api.get('/monitoring/activity', { headers });
+      const activity = activityRes.data || { data: [] };
       
       setMonitoringData({
         performance: performance.data || {},
@@ -260,12 +256,11 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       const token = AuthService.getStoredToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
       
       // Get all policies
-      const policiesRes = await fetch('http://localhost:3001/api/policies', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const policies = policiesRes.ok ? await policiesRes.json() : { data: [] };
+      const policiesRes = await api.get('/policies', { headers });
+      const policies = policiesRes.data || { data: [] };
       
       const activePolicies = policies.data?.filter((p: any) => p.isActive) || [];
       const categories = Array.from(new Set(policies.data?.map((p: any) => p.category).filter((c: any) => c) || []));
@@ -480,12 +475,12 @@ const OverviewView: React.FC = () => {
   const loadOverviewStats = async () => {
     try {
       const [eventsRes, systemRes] = await Promise.all([
-        fetch('http://localhost:3001/api/events'),
-        fetch('http://localhost:3001/health')
+        api.get('/events'),
+        api.get('/health', { baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001' })
       ]);
 
-      const eventsData = await eventsRes.json();
-      const systemData = await systemRes.json();
+      const eventsData = eventsRes.data || {};
+      const systemData = systemRes.data || {};
 
       setStats({
         totalEvents: eventsData.data?.length || 0,

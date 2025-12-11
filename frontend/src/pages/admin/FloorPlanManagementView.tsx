@@ -62,8 +62,14 @@ const FloorPlanManagementView: React.FC = () => {
       const plans = await FloorPlanService.getFloorPlansByEvent(selectedEventId);
       setFloorPlans(plans);
     } catch (error: any) {
-      console.error('Error loading floor plans:', error);
-      alert('Error loading floor plans: ' + error.message);
+      // Don't show error if it's a 404 (no floor plans exist yet)
+      if (error?.response?.status !== 404) {
+        console.error('Error loading floor plans:', error);
+        alert('Error loading floor plans: ' + error.message);
+      } else {
+        // 404 is OK - just means no floor plans exist yet
+        setFloorPlans([]);
+      }
     } finally {
       setLoading(false);
     }

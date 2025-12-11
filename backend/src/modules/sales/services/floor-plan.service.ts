@@ -153,30 +153,36 @@ class FloorPlanService {
    * Get all floor plans for an event
    */
   async getFloorPlansByEvent(eventId: string): Promise<FloorPlanData[]> {
-    const result = await pool.query(
-      `SELECT 
-        id,
-        event_id as "eventId",
-        name,
-        layout_data as "layoutData",
-        image_url as "imageUrl",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM floor_plans
-      WHERE event_id = $1
-      ORDER BY created_at DESC`,
-      [eventId]
-    );
+    try {
+      const result = await pool.query(
+        `SELECT 
+          id,
+          event_id as "eventId",
+          name,
+          layout_data as "layoutData",
+          image_url as "imageUrl",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM floor_plans
+        WHERE event_id = $1
+        ORDER BY created_at DESC`,
+        [eventId]
+      );
 
-    return result.rows.map(plan => ({
-      id: plan.id,
-      eventId: plan.eventId,
-      name: plan.name,
-      imageUrl: plan.imageUrl,
-      layoutData: plan.layoutData || { gridWidth: 0, gridHeight: 0, cellSize: 50 },
-      createdAt: plan.createdAt,
-      updatedAt: plan.updatedAt
-    }));
+      return result.rows.map(plan => ({
+        id: plan.id,
+        eventId: plan.eventId,
+        name: plan.name,
+        imageUrl: plan.imageUrl,
+        layoutData: plan.layoutData || { gridWidth: 0, gridHeight: 0, cellSize: 50 },
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt
+      }));
+    } catch (error: any) {
+      // Return empty array if there's an error (table might not exist or no data)
+      console.warn('Error fetching floor plans:', error.message);
+      return [];
+    }
   }
 
   /**

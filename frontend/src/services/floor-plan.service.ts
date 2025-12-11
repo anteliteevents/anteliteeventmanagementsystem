@@ -91,8 +91,16 @@ class FloorPlanService {
    * Get all floor plans for an event
    */
   async getFloorPlansByEvent(eventId: string): Promise<FloorPlan[]> {
-    const response = await api.get<ApiResponse<FloorPlan[]>>(`/sales/floor-plans/event/${eventId}`);
-    return response.data.data || [];
+    try {
+      const response = await api.get<ApiResponse<FloorPlan[]>>(`/sales/floor-plans/event/${eventId}`);
+      return response.data.data || [];
+    } catch (error: any) {
+      // Return empty array if 404 (no floor plans exist yet)
+      if (error?.response?.status === 404) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   /**

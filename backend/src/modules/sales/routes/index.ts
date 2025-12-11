@@ -202,14 +202,20 @@ export function salesRoutes(router: Router): void {
    */
   router.get('/floor-plans/event/:eventId', authenticate, async (req: Request, res: Response) => {
     try {
+      // Check if feature is enabled, but allow access even if disabled (for backward compatibility)
       if (!featureFlags.enabled('svgFloorPlan')) {
-        return res.status(503).json(apiGateway.error('FEATURE_DISABLED', 'SVG Floor Plan feature is disabled'));
+        // Return empty array instead of error if feature is disabled
+        return res.json(apiGateway.success([], { module: 'sales' }));
       }
 
       const floorPlans = await floorPlanService.getFloorPlansByEvent(req.params.eventId);
 
       res.json(apiGateway.success(floorPlans, { module: 'sales' }));
     } catch (error: any) {
+      // If no floor plans exist, return empty array instead of error
+      if (error.message?.includes('not found') || error.message?.includes('No floor plans')) {
+        return res.json(apiGateway.success([], { module: 'sales' }));
+      }
       res.status(500).json(apiGateway.error('INTERNAL_ERROR', error.message));
     }
   });

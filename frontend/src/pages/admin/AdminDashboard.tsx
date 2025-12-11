@@ -159,12 +159,18 @@ const AdminDashboard: React.FC = () => {
               console.warn(`Error loading stats for event ${event.id}:`, err);
               return null;
             }),
-            withTimeout(api.get(`/costing/summary/event/${event.id}`, { headers }), API_TIMEOUTS.COSTING_SUMMARY).catch((err) => {
-              console.warn(`Error loading costing summary for event ${event.id}:`, err);
+            withTimeout(api.get(`/costing/summary/event/${event.id}`, { headers }), API_TIMEOUTS.COSTING_SUMMARY).catch((err: any) => {
+              // Only log if it's not a 404 (endpoint might not exist or module disabled)
+              if (err?.response?.status !== 404) {
+                console.warn(`Error loading costing summary for event ${event.id}:`, err);
+              }
               return null;
             }),
-            withTimeout(api.get(`/proposals/event/${event.id}`, { headers }), API_TIMEOUTS.PROPOSALS).catch((err) => {
-              console.warn(`Error loading proposals for event ${event.id}:`, err);
+            withTimeout(api.get(`/proposals/event/${event.id}`, { headers }), API_TIMEOUTS.PROPOSALS).catch((err: any) => {
+              // Only log if it's not a 404 (endpoint might not exist or module disabled)
+              if (err?.response?.status !== 404) {
+                console.warn(`Error loading proposals for event ${event.id}:`, err);
+              }
               return null;
             }),
           ]);

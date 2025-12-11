@@ -203,6 +203,33 @@ const EventsManagementView: React.FC = () => {
                   💸 Costs
                 </Link>
                 <button
+                  className="btn-action-small"
+                  style={{ backgroundColor: '#FF9800' }}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      const newName = prompt('Enter name for duplicate:', `${event.name} (Copy)`);
+                      if (!newName) return;
+                      const response = await fetch(`http://localhost:3001/api/events/${event.id}/duplicate`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ name: newName }),
+                      });
+                      if (response.ok) {
+                        await loadEvents();
+                        alert('Event duplicated successfully!');
+                      }
+                    } catch (error: any) {
+                      alert('Error duplicating event: ' + error.message);
+                    }
+                  }}
+                >
+                  📋 Duplicate
+                </button>
+                <button
                   className="btn-action-small danger"
                   onClick={(e) => {
                     e.stopPropagation();

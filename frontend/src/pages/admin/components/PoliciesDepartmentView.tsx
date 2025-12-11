@@ -1,13 +1,14 @@
 /**
  * Policies Department View Component
  * 
- * Enhanced policies department view with modern UI and skeleton loaders.
+ * Enhanced policies department view with modern UI, skeleton loaders, and full CRUD operations.
  * 
  * @component
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import SkeletonLoader from '../../../components/ui/SkeletonLoader';
+import api from '../../../services/api';
 
 interface PoliciesDepartmentViewProps {
   data: any;
@@ -17,6 +18,90 @@ interface PoliciesDepartmentViewProps {
 }
 
 const PoliciesDepartmentView: React.FC<PoliciesDepartmentViewProps> = ({ data, loading = false, error = null, onRefresh }) => {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedPolicy, setSelectedPolicy] = useState<any>(null);
+  const [policyForm, setPolicyForm] = useState({
+    title: '',
+    content: '',
+    category: '',
+    version: '1.0',
+    effectiveDate: '',
+    expiresAt: ''
+  });
+
+  const handleCreatePolicy = async () => {
+    try {
+      if (!policyForm.title || !policyForm.content || !policyForm.category) {
+        alert('Please fill in title, content, and category');
+        return;
+      }
+      await api.post('/policies', {
+        ...policyForm,
+        effectiveDate: policyForm.effectiveDate ? new Date(policyForm.effectiveDate).toISOString() : undefined,
+        expiresAt: policyForm.expiresAt ? new Date(policyForm.expiresAt).toISOString() : undefined
+      });
+      setShowCreateModal(false);
+      setPolicyForm({ title: '', content: '', category: '', version: '1.0', effectiveDate: '', expiresAt: '' });
+      onRefresh();
+      alert('Policy created successfully!');
+    } catch (error: any) {
+      alert('Error creating policy: ' + (error.response?.data?.error?.message || error.message));
+    }
+  };
+
+  const handleUpdatePolicy = async () => {
+    if (!selectedPolicy) return;
+    try {
+      await api.put(`/policies/${selectedPolicy.id}`, {
+        ...policyForm,
+        effectiveDate: policyForm.effectiveDate ? new Date(policyForm.effectiveDate).toISOString() : undefined,
+        expiresAt: policyForm.expiresAt ? new Date(policyForm.expiresAt).toISOString() : undefined
+      });
+      setShowEditModal(false);
+      setSelectedPolicy(null);
+      onRefresh();
+      alert('Policy updated successfully!');
+    } catch (error: any) {
+      alert('Error updating policy: ' + (error.response?.data?.error?.message || error.message));
+    }
+  };
+
+  const handleDeletePolicy = async (policyId: string) => {
+    if (!window.confirm('Are you sure you want to delete this policy?')) return;
+    try {
+      await api.delete(`/policies/${policyId}`);
+      onRefresh();
+      alert('Policy deleted successfully!');
+    } catch (error: any) {
+      alert('Error deleting policy: ' + (error.response?.data?.error?.message || error.message));
+    }
+  };
+
+  const handleDuplicatePolicy = async (policyId: string) => {
+    try {
+      const newTitle = prompt('Enter title for duplicate:', '');
+      if (!newTitle) return;
+      await api.post(`/policies/${policyId}/duplicate`, { title: newTitle });
+      onRefresh();
+      alert('Policy duplicated successfully!');
+    } catch (error: any) {
+      alert('Error duplicating policy: ' + (error.response?.data?.error?.message || error.message));
+    }
+  };
+
+  const openEditModal = (policy: any) => {
+    setSelectedPolicy(policy);
+    setPolicyForm({
+      title: policy.title || '',
+      content: policy.content || '',
+      category: policy.category || '',
+      version: policy.version || '1.0',
+      effectiveDate: policy.effectiveDate ? new Date(policy.effectiveDate).toISOString().split('T')[0] : '',
+      expiresAt: policy.expiresAt ? new Date(policy.expiresAt).toISOString().split('T')[0] : ''
+    });
+    setShowEditModal(true);
+  };
   if (loading || !data) {
     return (
       <div className="policies-view enhanced-view">
@@ -53,6 +138,17 @@ const PoliciesDepartmentView: React.FC<PoliciesDepartmentViewProps> = ({ data, l
 
   return (
     <div className="policies-view enhanced-view">
+      <div className="section-header" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ margin: 0 }}>📋 Policies Management</h2>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="btn-primary enhanced-btn"
+          style={{ padding: '0.75rem 1.5rem' }}
+        >
+          ➕ Create Policy
+        </button>
+      </div>
+
       <div className="sales-overview">
         <div className="sales-card revenue-card enhanced-card">
           <div className="card-header">
@@ -109,6 +205,60 @@ const PoliciesDepartmentView: React.FC<PoliciesDepartmentViewProps> = ({ data, l
                   {policy.content.substring(0, 200)}{policy.content.length > 200 ? '...' : ''}
                 </div>
               )}
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => openEditModal(policy)}
+                  className="btn-action-small"
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  onClick={() => handleDuplicatePolicy(policy.id)}
+                  className="btn-action-small"
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', backgroundColor: '#FF9800' }}
+                >
+                  📋 Duplicate
+                </button>
+                <button
+                  onClick={() => handleDeletePolicy(policy.id)}
+                  className="btn-action-small"
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', backgroundColor: '#f44336' }}
+                >
+                  🗑️ Delete
+                </button>
+                {!policy.isActive ? (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await api.post(`/policies/${policy.id}/activate`);
+                        onRefresh();
+                      } catch (error: any) {
+                        alert('Error activating policy: ' + (error.response?.data?.error?.message || error.message));
+                      }
+                    }}
+                    className="btn-action-small"
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', backgroundColor: '#4CAF50' }}
+                  >
+                    ✅ Activate
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await api.post(`/policies/${policy.id}/deactivate`);
+                        onRefresh();
+                      } catch (error: any) {
+                        alert('Error deactivating policy: ' + (error.response?.data?.error?.message || error.message));
+                      }
+                    }}
+                    className="btn-action-small"
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', backgroundColor: '#9E9E9E' }}
+                  >
+                    ❌ Deactivate
+                  </button>
+                )}
+              </div>
             </div>
           ))}
           {(!data.policies || data.policies.length === 0) && (
@@ -116,6 +266,154 @@ const PoliciesDepartmentView: React.FC<PoliciesDepartmentViewProps> = ({ data, l
           )}
         </div>
       </div>
+
+      {/* Create Policy Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Create New Policy</h2>
+              <button className="btn-close" onClick={() => setShowCreateModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Title *</label>
+                <input
+                  type="text"
+                  value={policyForm.title}
+                  onChange={(e) => setPolicyForm({ ...policyForm, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Category *</label>
+                <input
+                  type="text"
+                  value={policyForm.category}
+                  onChange={(e) => setPolicyForm({ ...policyForm, category: e.target.value })}
+                  placeholder="e.g., Terms, Privacy, Refund"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Content *</label>
+                <textarea
+                  value={policyForm.content}
+                  onChange={(e) => setPolicyForm({ ...policyForm, content: e.target.value })}
+                  rows={10}
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Version</label>
+                  <input
+                    type="text"
+                    value={policyForm.version}
+                    onChange={(e) => setPolicyForm({ ...policyForm, version: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Effective Date</label>
+                  <input
+                    type="date"
+                    value={policyForm.effectiveDate}
+                    onChange={(e) => setPolicyForm({ ...policyForm, effectiveDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Expires At</label>
+                <input
+                  type="date"
+                  value={policyForm.expiresAt}
+                  onChange={(e) => setPolicyForm({ ...policyForm, expiresAt: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowCreateModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={handleCreatePolicy}>Create Policy</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Policy Modal */}
+      {showEditModal && selectedPolicy && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Policy</h2>
+              <button className="btn-close" onClick={() => setShowEditModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Title *</label>
+                <input
+                  type="text"
+                  value={policyForm.title}
+                  onChange={(e) => setPolicyForm({ ...policyForm, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Category *</label>
+                <input
+                  type="text"
+                  value={policyForm.category}
+                  onChange={(e) => setPolicyForm({ ...policyForm, category: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Content *</label>
+                <textarea
+                  value={policyForm.content}
+                  onChange={(e) => setPolicyForm({ ...policyForm, content: e.target.value })}
+                  rows={10}
+                  required
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Version</label>
+                  <input
+                    type="text"
+                    value={policyForm.version}
+                    onChange={(e) => setPolicyForm({ ...policyForm, version: e.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Effective Date</label>
+                  <input
+                    type="date"
+                    value={policyForm.effectiveDate}
+                    onChange={(e) => setPolicyForm({ ...policyForm, effectiveDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Expires At</label>
+                <input
+                  type="date"
+                  value={policyForm.expiresAt}
+                  onChange={(e) => setPolicyForm({ ...policyForm, expiresAt: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowEditModal(false)}>Cancel</button>
+              <button className="btn-primary" onClick={handleUpdatePolicy}>Update Policy</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PoliciesDepartmentView;
 
       <div className="sales-section enhanced-section">
         <h2>📂 Policy Categories</h2>

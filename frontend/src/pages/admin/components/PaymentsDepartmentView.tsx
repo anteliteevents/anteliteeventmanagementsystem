@@ -11,11 +11,13 @@ import SkeletonLoader from '../../../components/ui/SkeletonLoader';
 
 interface PaymentsDepartmentViewProps {
   data: any;
+  loading?: boolean;
+  error?: string | null;
   onRefresh: () => void;
 }
 
-const PaymentsDepartmentView: React.FC<PaymentsDepartmentViewProps> = ({ data, onRefresh }) => {
-  if (!data) {
+const PaymentsDepartmentView: React.FC<PaymentsDepartmentViewProps> = ({ data, loading = false, error = null, onRefresh }) => {
+  if (loading || !data) {
     return (
       <div className="payments-view enhanced-view">
         <div className="loading-skeleton">
@@ -30,6 +32,20 @@ const PaymentsDepartmentView: React.FC<PaymentsDepartmentViewProps> = ({ data, o
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="payments-view enhanced-view">
+        <div className="error-message enhanced-card" style={{ padding: '2rem', textAlign: 'center' }}>
+          <h3>⚠️ Error Loading Payments Data</h3>
+          <p>{error}</p>
+          <button onClick={onRefresh} className="btn-primary enhanced-btn" style={{ marginTop: '1rem' }}>
+            🔄 Retry
+          </button>
         </div>
       </div>
     );

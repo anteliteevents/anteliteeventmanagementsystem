@@ -11,11 +11,13 @@ import SkeletonLoader from '../../../components/ui/SkeletonLoader';
 
 interface MonitoringDepartmentViewProps {
   data: any;
+  loading?: boolean;
+  error?: string | null;
   onRefresh: () => void;
 }
 
-const MonitoringDepartmentView: React.FC<MonitoringDepartmentViewProps> = ({ data, onRefresh }) => {
-  if (!data) {
+const MonitoringDepartmentView: React.FC<MonitoringDepartmentViewProps> = ({ data, loading = false, error = null, onRefresh }) => {
+  if (loading || !data) {
     return (
       <div className="monitoring-view enhanced-view">
         <div className="loading-skeleton">
@@ -30,6 +32,20 @@ const MonitoringDepartmentView: React.FC<MonitoringDepartmentViewProps> = ({ dat
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="monitoring-view enhanced-view">
+        <div className="error-message enhanced-card" style={{ padding: '2rem', textAlign: 'center' }}>
+          <h3>⚠️ Error Loading Monitoring Data</h3>
+          <p>{error}</p>
+          <button onClick={onRefresh} className="btn-primary enhanced-btn" style={{ marginTop: '1rem' }}>
+            🔄 Retry
+          </button>
         </div>
       </div>
     );

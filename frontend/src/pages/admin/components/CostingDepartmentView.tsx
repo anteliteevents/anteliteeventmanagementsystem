@@ -11,11 +11,13 @@ import SkeletonLoader from '../../../components/ui/SkeletonLoader';
 
 interface CostingDepartmentViewProps {
   data: any;
+  loading?: boolean;
+  error?: string | null;
   onRefresh: () => void;
 }
 
-const CostingDepartmentView: React.FC<CostingDepartmentViewProps> = ({ data, onRefresh }) => {
-  if (!data) {
+const CostingDepartmentView: React.FC<CostingDepartmentViewProps> = ({ data, loading = false, error = null, onRefresh }) => {
+  if (loading || !data) {
     return (
       <div className="costing-view enhanced-view">
         <div className="loading-skeleton">
@@ -30,6 +32,20 @@ const CostingDepartmentView: React.FC<CostingDepartmentViewProps> = ({ data, onR
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="costing-view enhanced-view">
+        <div className="error-message enhanced-card" style={{ padding: '2rem', textAlign: 'center' }}>
+          <h3>⚠️ Error Loading Costing Data</h3>
+          <p>{error}</p>
+          <button onClick={onRefresh} className="btn-primary enhanced-btn" style={{ marginTop: '1rem' }}>
+            🔄 Retry
+          </button>
         </div>
       </div>
     );

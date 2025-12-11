@@ -12,14 +12,16 @@ import SkeletonLoader from '../../../components/ui/SkeletonLoader';
 
 interface SalesDepartmentViewProps {
   data: any;
+  loading?: boolean;
+  error?: string | null;
   onRefresh: () => void;
 }
 
-const SalesDepartmentView: React.FC<SalesDepartmentViewProps> = ({ data, onRefresh }) => {
+const SalesDepartmentView: React.FC<SalesDepartmentViewProps> = ({ data, loading = false, error = null, onRefresh }) => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [timeRange, setTimeRange] = useState<string>('all');
 
-  if (!data) {
+  if (loading || !data) {
     return (
       <div className="sales-view enhanced-view">
         <div className="loading-skeleton">
@@ -38,6 +40,20 @@ const SalesDepartmentView: React.FC<SalesDepartmentViewProps> = ({ data, onRefre
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="sales-view enhanced-view">
+        <div className="error-message enhanced-card" style={{ padding: '2rem', textAlign: 'center' }}>
+          <h3>⚠️ Error Loading Sales Data</h3>
+          <p>{error}</p>
+          <button onClick={onRefresh} className="btn-primary enhanced-btn" style={{ marginTop: '1rem' }}>
+            🔄 Retry
+          </button>
         </div>
       </div>
     );
@@ -123,7 +139,8 @@ const SalesDepartmentView: React.FC<SalesDepartmentViewProps> = ({ data, onRefre
           </select>
         </div>
         <div className="events-sales-list">
-          {data.events?.map((item: any) => (
+          {data.events && data.events.length > 0 ? (
+            data.events.map((item: any) => (
             <div 
               key={item.event.id} 
               className={`event-sales-item enhanced-item ${selectedEvent?.id === item.event.id ? 'selected' : ''}`}
@@ -153,7 +170,15 @@ const SalesDepartmentView: React.FC<SalesDepartmentViewProps> = ({ data, onRefre
                 <div className="no-stats">No statistics available</div>
               )}
             </div>
-          ))}
+            ))
+          ) : (
+            <div className="empty-state enhanced-card" style={{ padding: '2rem', textAlign: 'center' }}>
+              <p>📭 No events found</p>
+              <p style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                Create an event to start tracking sales data.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

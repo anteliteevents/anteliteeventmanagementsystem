@@ -63,11 +63,23 @@ const AdminDashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [activeView, setActiveView] = useState<string>('overview');
   const [salesData, setSalesData] = useState<any>(null);
+  const [salesLoading, setSalesLoading] = useState<boolean>(false);
+  const [salesError, setSalesError] = useState<string | null>(null);
   const [paymentsData, setPaymentsData] = useState<any>(null);
+  const [paymentsLoading, setPaymentsLoading] = useState<boolean>(false);
+  const [paymentsError, setPaymentsError] = useState<string | null>(null);
   const [costingData, setCostingData] = useState<any>(null);
+  const [costingLoading, setCostingLoading] = useState<boolean>(false);
+  const [costingError, setCostingError] = useState<string | null>(null);
   const [proposalsData, setProposalsData] = useState<any>(null);
+  const [proposalsLoading, setProposalsLoading] = useState<boolean>(false);
+  const [proposalsError, setProposalsError] = useState<string | null>(null);
   const [monitoringData, setMonitoringData] = useState<any>(null);
+  const [monitoringLoading, setMonitoringLoading] = useState<boolean>(false);
+  const [monitoringError, setMonitoringError] = useState<string | null>(null);
   const [policiesData, setPoliciesData] = useState<any>(null);
+  const [policiesLoading, setPoliciesLoading] = useState<boolean>(false);
+  const [policiesError, setPoliciesError] = useState<string | null>(null);
   const [overviewData, setOverviewData] = useState<any>(null);
   const [overviewLoading, setOverviewLoading] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
@@ -252,6 +264,8 @@ const AdminDashboard: React.FC = () => {
       const cached = getCachedData(cacheKey);
       if (cached) {
         setSalesData(cached);
+        setSalesLoading(false);
+        setSalesError(null);
         return;
       }
     } else {
@@ -259,6 +273,8 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
+      setSalesLoading(true);
+      setSalesError(null);
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
@@ -270,10 +286,16 @@ const AdminDashboard: React.FC = () => {
             status: 'active,published',
             limit: DASHBOARD_CONSTANTS.MAX_EVENTS_FOR_SALES 
           } 
+        }).catch((err: any) => {
+          console.warn('Error fetching events:', err);
+          return { data: { data: [] } };
         }),
         api.get('/booths', { 
           headers,
           params: { limit: 100 } // Limit booths
+        }).catch((err: any) => {
+          console.warn('Error fetching booths:', err);
+          return { data: { data: [] } };
         }),
       ]);
 
@@ -314,9 +336,22 @@ const AdminDashboard: React.FC = () => {
 
       setCachedData(cacheKey, data);
       setSalesData(data);
+      setSalesError(null);
     } catch (error: any) {
       console.error('Error loading sales data:', error);
-      setSalesData(null);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to load sales data';
+      setSalesError(errorMessage);
+      // Set fallback empty data instead of null
+      setSalesData({
+        totalRevenue: 0,
+        totalBooths: 0,
+        bookedBooths: 0,
+        availableBooths: 0,
+        booths: [],
+        events: [],
+      });
+    } finally {
+      setSalesLoading(false);
     }
   };
 
@@ -327,6 +362,8 @@ const AdminDashboard: React.FC = () => {
       const cached = getCachedData(cacheKey);
       if (cached) {
         setPaymentsData(cached);
+        setPaymentsLoading(false);
+        setPaymentsError(null);
         return;
       }
     } else {
@@ -334,6 +371,8 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
+      setPaymentsLoading(true);
+      setPaymentsError(null);
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
@@ -342,10 +381,16 @@ const AdminDashboard: React.FC = () => {
         api.get('/payments/transactions', { 
           headers,
           params: { limit: DASHBOARD_CONSTANTS.MAX_TRANSACTIONS, sort: 'createdAt', order: 'desc' }
+        }).catch((err: any) => {
+          console.warn('Error fetching transactions:', err);
+          return { data: { data: [] } };
         }),
         api.get('/payments/invoices', { 
           headers,
           params: { limit: DASHBOARD_CONSTANTS.MAX_INVOICES, sort: 'createdAt', order: 'desc' }
+        }).catch((err: any) => {
+          console.warn('Error fetching invoices:', err);
+          return { data: { data: [] } };
         }),
       ]);
 
@@ -373,9 +418,23 @@ const AdminDashboard: React.FC = () => {
 
       setCachedData(cacheKey, data);
       setPaymentsData(data);
+      setPaymentsError(null);
     } catch (error: any) {
       console.error('Error loading payments data:', error);
-      setPaymentsData(null);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to load payments data';
+      setPaymentsError(errorMessage);
+      setPaymentsData({
+        totalRevenue: 0,
+        completedPayments: 0,
+        pendingPayments: 0,
+        totalInvoices: 0,
+        paidInvoices: 0,
+        totalTransactions: 0,
+        transactions: [],
+        invoices: [],
+      });
+    } finally {
+      setPaymentsLoading(false);
     }
   };
 
@@ -386,6 +445,8 @@ const AdminDashboard: React.FC = () => {
       const cached = getCachedData(cacheKey);
       if (cached) {
         setCostingData(cached);
+        setCostingLoading(false);
+        setCostingError(null);
         return;
       }
     } else {
@@ -393,6 +454,8 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
+      setCostingLoading(true);
+      setCostingError(null);
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
@@ -404,6 +467,9 @@ const AdminDashboard: React.FC = () => {
             status: 'active,published',
             limit: DASHBOARD_CONSTANTS.MAX_EVENTS_FOR_COSTING 
           } 
+        }).catch((err: any) => {
+          console.warn('Error fetching events:', err);
+          return { data: { data: [] } };
         }),
       ]);
 
@@ -445,9 +511,20 @@ const AdminDashboard: React.FC = () => {
 
       setCachedData(cacheKey, data);
       setCostingData(data);
+      setCostingError(null);
     } catch (error: any) {
       console.error('Error loading costing data:', error);
-      setCostingData(null);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to load costing data';
+      setCostingError(errorMessage);
+      setCostingData({
+        totalBudget: 0,
+        totalSpent: 0,
+        remaining: 0,
+        eventsWithCosts: 0,
+        events: [],
+      });
+    } finally {
+      setCostingLoading(false);
     }
   };
 
@@ -458,6 +535,8 @@ const AdminDashboard: React.FC = () => {
       const cached = getCachedData(cacheKey);
       if (cached) {
         setProposalsData(cached);
+        setProposalsLoading(false);
+        setProposalsError(null);
         return;
       }
     } else {
@@ -465,6 +544,8 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
+      setProposalsLoading(true);
+      setProposalsError(null);
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
@@ -472,6 +553,9 @@ const AdminDashboard: React.FC = () => {
         api.get('/proposals', { 
           headers,
           params: { limit: DASHBOARD_CONSTANTS.MAX_PROPOSALS, sort: 'createdAt', order: 'desc' }
+        }).catch((err: any) => {
+          console.warn('Error fetching proposals:', err);
+          return { data: { data: [] } };
         }),
         api.get('/proposals/templates', { headers }).catch(() => ({ data: { data: [] } })),
       ]);
@@ -495,9 +579,21 @@ const AdminDashboard: React.FC = () => {
 
       setCachedData(cacheKey, data);
       setProposalsData(data);
+      setProposalsError(null);
     } catch (error: any) {
       console.error('Error loading proposals data:', error);
-      setProposalsData(null);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to load proposals data';
+      setProposalsError(errorMessage);
+      setProposalsData({
+        totalProposals: 0,
+        draftProposals: 0,
+        submittedProposals: 0,
+        approvedProposals: 0,
+        allProposals: [],
+        templates: [],
+      });
+    } finally {
+      setProposalsLoading(false);
     }
   };
 
@@ -508,6 +604,8 @@ const AdminDashboard: React.FC = () => {
       const cached = getCachedData(cacheKey);
       if (cached) {
         setMonitoringData(cached);
+        setMonitoringLoading(false);
+        setMonitoringError(null);
         return;
       }
     } else {
@@ -515,6 +613,8 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
+      setMonitoringLoading(true);
+      setMonitoringError(null);
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
@@ -568,9 +668,24 @@ const AdminDashboard: React.FC = () => {
 
       setCachedData(cacheKey, data);
       setMonitoringData(data);
+      setMonitoringError(null);
     } catch (error: any) {
       console.error('Error loading monitoring data:', error);
-      setMonitoringData(null);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to load monitoring data';
+      setMonitoringError(errorMessage);
+      setMonitoringData({
+        totalActivities: 0,
+        performance: {
+          sales: {
+            bookings: 0,
+            revenue: 0,
+          },
+        },
+        topPerformers: [],
+        activities: [],
+      });
+    } finally {
+      setMonitoringLoading(false);
     }
   };
 
@@ -581,6 +696,8 @@ const AdminDashboard: React.FC = () => {
       const cached = getCachedData(cacheKey);
       if (cached) {
         setPoliciesData(cached);
+        setPoliciesLoading(false);
+        setPoliciesError(null);
         return;
       }
     } else {
@@ -588,6 +705,8 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
+      setPoliciesLoading(true);
+      setPoliciesError(null);
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
@@ -613,9 +732,19 @@ const AdminDashboard: React.FC = () => {
 
       setCachedData(cacheKey, data);
       setPoliciesData(data);
+      setPoliciesError(null);
     } catch (error: any) {
       console.error('Error loading policies data:', error);
-      setPoliciesData(null);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to load policies data';
+      setPoliciesError(errorMessage);
+      setPoliciesData({
+        totalPolicies: 0,
+        activeCount: 0,
+        categories: [],
+        policies: [],
+      });
+    } finally {
+      setPoliciesLoading(false);
     }
   };
 
@@ -675,12 +804,54 @@ const AdminDashboard: React.FC = () => {
               onRefresh={() => loadOverviewData(true)}
             />
           )}
-          {activeView === 'sales' && <SalesDepartmentView data={salesData} onRefresh={() => loadSalesData(true)} />}
-          {activeView === 'payments' && <PaymentsDepartmentView data={paymentsData} onRefresh={() => loadPaymentsData(true)} />}
-          {activeView === 'costing' && <CostingDepartmentView data={costingData} onRefresh={() => loadCostingData(true)} />}
-          {activeView === 'proposals' && <ProposalsDepartmentView data={proposalsData} onRefresh={() => loadProposalsData(true)} />}
-          {activeView === 'monitoring' && <MonitoringDepartmentView data={monitoringData} onRefresh={() => loadMonitoringData(true)} />}
-          {activeView === 'policies' && <PoliciesDepartmentView data={policiesData} onRefresh={() => loadPoliciesData(true)} />}
+          {activeView === 'sales' && (
+            <SalesDepartmentView 
+              data={salesData} 
+              loading={salesLoading}
+              error={salesError}
+              onRefresh={() => loadSalesData(true)} 
+            />
+          )}
+          {activeView === 'payments' && (
+            <PaymentsDepartmentView 
+              data={paymentsData} 
+              loading={paymentsLoading}
+              error={paymentsError}
+              onRefresh={() => loadPaymentsData(true)} 
+            />
+          )}
+          {activeView === 'costing' && (
+            <CostingDepartmentView 
+              data={costingData} 
+              loading={costingLoading}
+              error={costingError}
+              onRefresh={() => loadCostingData(true)} 
+            />
+          )}
+          {activeView === 'proposals' && (
+            <ProposalsDepartmentView 
+              data={proposalsData} 
+              loading={proposalsLoading}
+              error={proposalsError}
+              onRefresh={() => loadProposalsData(true)} 
+            />
+          )}
+          {activeView === 'monitoring' && (
+            <MonitoringDepartmentView 
+              data={monitoringData} 
+              loading={monitoringLoading}
+              error={monitoringError}
+              onRefresh={() => loadMonitoringData(true)} 
+            />
+          )}
+          {activeView === 'policies' && (
+            <PoliciesDepartmentView 
+              data={policiesData} 
+              loading={policiesLoading}
+              error={policiesError}
+              onRefresh={() => loadPoliciesData(true)} 
+            />
+          )}
           {activeView === 'events' && <EventsManagementView />}
           {activeView === 'booths' && <BoothsManagementView />}
           {activeView === 'users' && <UsersManagementView />}

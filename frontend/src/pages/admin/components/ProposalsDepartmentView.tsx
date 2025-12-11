@@ -11,11 +11,13 @@ import SkeletonLoader from '../../../components/ui/SkeletonLoader';
 
 interface ProposalsDepartmentViewProps {
   data: any;
+  loading?: boolean;
+  error?: string | null;
   onRefresh: () => void;
 }
 
-const ProposalsDepartmentView: React.FC<ProposalsDepartmentViewProps> = ({ data, onRefresh }) => {
-  if (!data) {
+const ProposalsDepartmentView: React.FC<ProposalsDepartmentViewProps> = ({ data, loading = false, error = null, onRefresh }) => {
+  if (loading || !data) {
     return (
       <div className="proposals-view enhanced-view">
         <div className="loading-skeleton">
@@ -30,6 +32,20 @@ const ProposalsDepartmentView: React.FC<ProposalsDepartmentViewProps> = ({ data,
               </div>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="proposals-view enhanced-view">
+        <div className="error-message enhanced-card" style={{ padding: '2rem', textAlign: 'center' }}>
+          <h3>⚠️ Error Loading Proposals Data</h3>
+          <p>{error}</p>
+          <button onClick={onRefresh} className="btn-primary enhanced-btn" style={{ marginTop: '1rem' }}>
+            🔄 Retry
+          </button>
         </div>
       </div>
     );

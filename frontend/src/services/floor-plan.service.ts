@@ -6,6 +6,7 @@ export interface FloorPlan {
   eventId: string;
   name: string;
   imageUrl?: string;
+  isPublished?: boolean;
   layoutData: {
     gridWidth: number;
     gridHeight: number;
@@ -52,12 +53,14 @@ export interface CreateFloorPlanInput {
   name: string;
   layoutData: FloorPlan['layoutData'];
   imageUrl?: string;
+  isPublished?: boolean;
 }
 
 export interface UpdateFloorPlanInput {
   name?: string;
   layoutData?: FloorPlan['layoutData'];
   imageUrl?: string;
+  isPublished?: boolean;
 }
 
 class FloorPlanService {

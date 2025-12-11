@@ -238,12 +238,13 @@ export function salesRoutes(router: Router): void {
       //   return res.status(503).json(apiGateway.error('FEATURE_DISABLED', 'SVG Floor Plan feature is disabled'));
       // }
 
-      const { name, layoutData, imageUrl } = req.body;
+      const { name, layoutData, imageUrl, isPublished } = req.body;
 
       const floorPlan = await floorPlanService.updateFloorPlan(req.params.id, {
         name,
         layoutData,
-        imageUrl
+        imageUrl,
+        isPublished
       });
 
       res.json(apiGateway.success(floorPlan, { module: 'sales' }));
@@ -297,6 +298,28 @@ export function salesRoutes(router: Router): void {
       if (error.message === 'Floor plan not found') {
         return res.status(404).json(apiGateway.error('NOT_FOUND', error.message));
       }
+      res.status(500).json(apiGateway.error('INTERNAL_ERROR', error.message));
+    }
+  });
+
+  /**
+   * GET /api/sales/floor-plans/public/:id
+   * Get published floor plan (public access, no auth required)
+   */
+  router.get('/floor-plans/public/:id', async (req: Request, res: Response) => {
+    try {
+      const floorPlan = await floorPlanService.getFloorPlanById(req.params.id, false); // Only published
+      
+      if (!floorPlan) {
+        return res.status(404).json(apiGateway.error('NOT_FOUND', 'Published floor plan not found'));
+      }
+
+      if (!floorPlan.isPublished) {
+        return res.status(404).json(apiGateway.error('NOT_FOUND', 'Floor plan is not published'));
+      }
+
+      res.json(apiGateway.success(floorPlan, { module: 'sales' }));
+    } catch (error: any) {
       res.status(500).json(apiGateway.error('INTERNAL_ERROR', error.message));
     }
   });

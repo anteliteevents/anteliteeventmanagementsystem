@@ -49,6 +49,9 @@ const FloorPlanCanvasEditor: React.FC<FloorPlanCanvasEditorProps> = ({
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeHandle, setResizeHandle] = useState<string | null>(null);
+  const [resizeStartPos, setResizeStartPos] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -231,6 +234,33 @@ const FloorPlanCanvasEditor: React.FC<FloorPlanCanvasEditorProps> = ({
     return null;
   };
 
+  // Get resize handle at point
+  const getResizeHandleAtPoint = (point: { x: number; y: number }, shape: CanvasShape): string | null => {
+    const handleSize = 10;
+    const handles = [
+      { x: shape.x, y: shape.y, type: 'nw' },
+      { x: shape.x + shape.width, y: shape.y, type: 'ne' },
+      { x: shape.x + shape.width, y: shape.y + shape.height, type: 'se' },
+      { x: shape.x, y: shape.y + shape.height, type: 'sw' },
+      { x: shape.x + shape.width / 2, y: shape.y, type: 'n' },
+      { x: shape.x + shape.width, y: shape.y + shape.height / 2, type: 'e' },
+      { x: shape.x + shape.width / 2, y: shape.y + shape.height, type: 's' },
+      { x: shape.x, y: shape.y + shape.height / 2, type: 'w' },
+    ];
+
+    for (const handle of handles) {
+      if (
+        point.x >= handle.x - handleSize / 2 &&
+        point.x <= handle.x + handleSize / 2 &&
+        point.y >= handle.y - handleSize / 2 &&
+        point.y <= handle.y + handleSize / 2
+      ) {
+        return handle.type;
+      }
+    }
+    return null;
+  };
+
   // Mouse down handler
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (readOnly) return;
@@ -239,14 +269,28 @@ const FloorPlanCanvasEditor: React.FC<FloorPlanCanvasEditorProps> = ({
     const clickedShape = getShapeAtPoint(pos);
 
     if (clickedShape) {
-      // Start dragging
-      setSelectedShapeId(clickedShape.id);
-      setIsDragging(true);
-      setDragOffset({
-        x: pos.x - clickedShape.x,
-        y: pos.y - clickedShape.y
-      });
-      onShapeSelect?.(clickedShape);
+      // Check if clicking on resize handle
+      const handle = getResizeHandleAtPoint(pos, clickedShape);
+      if (handle && selectedShapeId === clickedShape.id) {
+        // Start resizing
+        setIsResizing(true);
+        setResizeHandle(handle);
+        setResizeStartPos({
+          x: pos.x,
+          y: pos.y,
+          width: clickedShape.width,
+          height: clickedShape.height
+        });
+      } else {
+        // Start dragging
+        setSelectedShapeId(clickedShape.id);
+        setIsDragging(true);
+        setDragOffset({
+          x: pos.x - clickedShape.x,
+          y: pos.y - clickedShape.y
+        });
+        onShapeSelect?.(clickedShape);
+      }
     } else {
       // Start drawing new shape
       setSelectedShapeId(null);
@@ -261,7 +305,42 @@ const FloorPlanCanvasEditor: React.FC<FloorPlanCanvasEditorProps> = ({
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const pos = getMousePos(e);
 
-    if (isDragging && selectedShapeId && dragOffset) {
+    if (isResizing && selectedShapeId && resizeHandle && resizeStartPos) {
+      // Update shape size
+      const shape = shapes.find(s => s.id === selectedShapeId);
+      if (shape) {
+        let newX = shape.x;
+        let newY = shape.y;
+        let newWidth = shape.width;
+        let newHeight = shape.height;
+
+        const deltaX = pos.x - resizeStartPos.x;
+        const deltaY = pos.y - resizeStartPos.y;
+
+        // Handle different resize handles
+        if (resizeHandle.includes('e')) {
+          newWidth = Math.max(20, resizeStartPos.width + deltaX);
+        }
+        if (resizeHandle.includes('w')) {
+          newWidth = Math.max(20, resizeStartPos.width - deltaX);
+          newX = shape.x + (shape.width - newWidth);
+        }
+        if (resizeHandle.includes('s')) {
+          newHeight = Math.max(20, resizeStartPos.height + deltaY);
+        }
+        if (resizeHandle.includes('n')) {
+          newHeight = Math.max(20, resizeStartPos.height - deltaY);
+          newY = shape.y + (shape.height - newHeight);
+        }
+
+        const newShapes = shapes.map(s =>
+          s.id === selectedShapeId
+            ? { ...s, x: newX, y: newY, width: newWidth, height: newHeight }
+            : s
+        );
+        onShapesChange?.(newShapes);
+      }
+    } else if (isDragging && selectedShapeId && dragOffset) {
       // Update shape position
       const shape = shapes.find(s => s.id === selectedShapeId);
       if (shape) {
@@ -282,6 +361,26 @@ const FloorPlanCanvasEditor: React.FC<FloorPlanCanvasEditorProps> = ({
         width: Math.abs(width),
         height: Math.abs(height)
       });
+    } else if (selectedShapeId && !readOnly) {
+      // Update cursor based on hover over resize handles
+      const shape = shapes.find(s => s.id === selectedShapeId);
+      if (shape) {
+        const handle = getResizeHandleAtPoint(pos, shape);
+        const canvas = canvasRef.current;
+        if (canvas) {
+          if (handle) {
+            const cursors: { [key: string]: string } = {
+              'nw': 'nw-resize', 'ne': 'ne-resize', 'se': 'se-resize', 'sw': 'sw-resize',
+              'n': 'n-resize', 'e': 'e-resize', 's': 's-resize', 'w': 'w-resize'
+            };
+            canvas.style.cursor = cursors[handle] || 'default';
+          } else if (isPointInShape(pos, shape)) {
+            canvas.style.cursor = 'move';
+          } else {
+            canvas.style.cursor = 'default';
+          }
+        }
+      }
     }
   };
 
@@ -307,9 +406,12 @@ const FloorPlanCanvasEditor: React.FC<FloorPlanCanvasEditorProps> = ({
 
     setIsDrawing(false);
     setIsDragging(false);
+    setIsResizing(false);
     setStartPos(null);
     setCurrentShape(null);
     setDragOffset(null);
+    setResizeHandle(null);
+    setResizeStartPos(null);
   };
 
   // Delete selected shape
@@ -398,7 +500,10 @@ const FloorPlanCanvasEditor: React.FC<FloorPlanCanvasEditorProps> = ({
           onMouseLeave={() => {
             setIsDrawing(false);
             setIsDragging(false);
+            setIsResizing(false);
             setCurrentShape(null);
+            const canvas = canvasRef.current;
+            if (canvas) canvas.style.cursor = 'default';
           }}
           className="floor-plan-canvas"
           style={{ cursor: isDrawing ? 'crosshair' : 'default' }}

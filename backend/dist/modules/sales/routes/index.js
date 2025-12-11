@@ -13,6 +13,7 @@ const floor_plan_service_1 = require("../services/floor-plan.service");
 const feature_flags_1 = require("../../../core/feature-flags");
 const gateway_1 = __importDefault(require("../../../api/gateway"));
 const upload_1 = require("../../../config/upload");
+const database_1 = __importDefault(require("../../../core/database"));
 function salesRoutes(router) {
     // Check if sales module is enabled
     router.use((req, res, next) => {
@@ -205,11 +206,12 @@ function salesRoutes(router) {
             // if (!featureFlags.enabled('svgFloorPlan')) {
             //   return res.status(503).json(apiGateway.error('FEATURE_DISABLED', 'SVG Floor Plan feature is disabled'));
             // }
-            const { name, layoutData, imageUrl } = req.body;
+            const { name, layoutData, imageUrl, isPublished } = req.body;
             const floorPlan = await floor_plan_service_1.floorPlanService.updateFloorPlan(req.params.id, {
                 name,
                 layoutData,
-                imageUrl
+                imageUrl,
+                isPublished
             });
             res.json(gateway_1.default.success(floorPlan, { module: 'sales' }));
         }
@@ -261,6 +263,44 @@ function salesRoutes(router) {
         }
     });
     /**
+     * GET /api/sales/floor-plans/public/:id
+     * Get published floor plan (public access, no auth required)
+     */
+    router.get('/floor-plans/public/:id', async (req, res) => {
+        try {
+            // Get published floor plan - query with is_published check
+            const result = await database_1.default.query(`SELECT 
+          id,
+          event_id as "eventId",
+          name,
+          layout_data as "layoutData",
+          image_url as "imageUrl",
+          is_published as "isPublished",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM floor_plans
+        WHERE id = $1 AND is_published = true`, [req.params.id]);
+            if (result.rows.length === 0) {
+                return res.status(404).json(gateway_1.default.error('NOT_FOUND', 'Published floor plan not found'));
+            }
+            const plan = result.rows[0];
+            const floorPlan = {
+                id: plan.id,
+                eventId: plan.eventId,
+                name: plan.name,
+                imageUrl: plan.imageUrl,
+                isPublished: plan.isPublished || false,
+                layoutData: plan.layoutData || { gridWidth: 0, gridHeight: 0, cellSize: 50 },
+                createdAt: plan.createdAt,
+                updatedAt: plan.updatedAt
+            };
+            res.json(gateway_1.default.success(floorPlan, { module: 'sales' }));
+        }
+        catch (error) {
+            res.status(500).json(gateway_1.default.error('INTERNAL_ERROR', error.message));
+        }
+    });
+    /**
      * POST /api/sales/floor-plans/upload-image
      * Upload floor plan background image
      */
@@ -304,6 +344,4 @@ function salesRoutes(router) {
         }
     });
 }
-// Import pool for the floor-plan route
-const database_1 = __importDefault(require("../../../core/database"));
 //# sourceMappingURL=index.js.map

@@ -9,6 +9,7 @@ import { floorPlanService } from '../services/floor-plan.service';
 import { featureFlags } from '../../../core/feature-flags';
 import apiGateway from '../../../api/gateway';
 import { upload, getFileUrl } from '../../../config/upload';
+import pool from '../../../core/database';
 
 export function salesRoutes(router: Router): void {
   // Check if sales module is enabled
@@ -308,15 +309,37 @@ export function salesRoutes(router: Router): void {
    */
   router.get('/floor-plans/public/:id', async (req: Request, res: Response) => {
     try {
-      const floorPlan = await floorPlanService.getFloorPlanById(req.params.id, false); // Only published
-      
-      if (!floorPlan) {
+      // Get published floor plan - query with is_published check
+      const result = await pool.query(
+        `SELECT 
+          id,
+          event_id as "eventId",
+          name,
+          layout_data as "layoutData",
+          image_url as "imageUrl",
+          is_published as "isPublished",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM floor_plans
+        WHERE id = $1 AND is_published = true`,
+        [req.params.id]
+      );
+
+      if (result.rows.length === 0) {
         return res.status(404).json(apiGateway.error('NOT_FOUND', 'Published floor plan not found'));
       }
 
-      if (!floorPlan.isPublished) {
-        return res.status(404).json(apiGateway.error('NOT_FOUND', 'Floor plan is not published'));
-      }
+      const plan = result.rows[0];
+      const floorPlan = {
+        id: plan.id,
+        eventId: plan.eventId,
+        name: plan.name,
+        imageUrl: plan.imageUrl,
+        isPublished: plan.isPublished || false,
+        layoutData: plan.layoutData || { gridWidth: 0, gridHeight: 0, cellSize: 50 },
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt
+      };
 
       res.json(apiGateway.success(floorPlan, { module: 'sales' }));
     } catch (error: any) {
@@ -371,7 +394,4 @@ export function salesRoutes(router: Router): void {
     }
   });
 }
-
-// Import pool for the floor-plan route
-import pool from '../../../core/database';
 

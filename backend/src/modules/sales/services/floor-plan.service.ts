@@ -93,6 +93,7 @@ class FloorPlanService {
         name,
         layout_data as "layoutData",
         image_url as "imageUrl",
+        is_published as "isPublished",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM floor_plans
@@ -110,6 +111,7 @@ class FloorPlanService {
       eventId: plan.eventId,
       name: plan.name,
       imageUrl: plan.imageUrl,
+      isPublished: plan.isPublished || false,
       layoutData: plan.layoutData || { gridWidth: 0, gridHeight: 0, cellSize: 50 },
       createdAt: plan.createdAt,
       updatedAt: plan.updatedAt

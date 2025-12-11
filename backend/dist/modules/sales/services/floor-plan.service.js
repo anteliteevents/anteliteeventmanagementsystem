@@ -32,6 +32,7 @@ class FloorPlanService {
         name,
         layout_data as "layoutData",
         image_url as "imageUrl",
+        is_published as "isPublished",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM floor_plans
@@ -45,6 +46,7 @@ class FloorPlanService {
             eventId: plan.eventId,
             name: plan.name,
             imageUrl: plan.imageUrl,
+            isPublished: plan.isPublished || false,
             layoutData: plan.layoutData || { gridWidth: 0, gridHeight: 0, cellSize: 50 },
             createdAt: plan.createdAt,
             updatedAt: plan.updatedAt
@@ -91,6 +93,7 @@ class FloorPlanService {
           name,
           layout_data as "layoutData",
           image_url as "imageUrl",
+          is_published as "isPublished",
           created_at as "createdAt",
           updated_at as "updatedAt"
         FROM floor_plans
@@ -101,6 +104,7 @@ class FloorPlanService {
                 eventId: plan.eventId,
                 name: plan.name,
                 imageUrl: plan.imageUrl,
+                isPublished: plan.isPublished || false,
                 layoutData: plan.layoutData || { gridWidth: 0, gridHeight: 0, cellSize: 50 },
                 createdAt: plan.createdAt,
                 updatedAt: plan.updatedAt
@@ -213,14 +217,16 @@ class FloorPlanService {
         if (!input.layoutData.gridWidth || !input.layoutData.gridHeight || !input.layoutData.cellSize) {
             throw new Error('layoutData must include gridWidth, gridHeight, and cellSize');
         }
-        const result = await database_1.default.query(`INSERT INTO floor_plans (event_id, name, layout_data, image_url)
-       VALUES ($1, $2, $3, $4)
+        const result = await database_1.default.query(`INSERT INTO floor_plans (event_id, name, layout_data, image_url, is_published)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id, event_id as "eventId", name, layout_data as "layoutData", 
-                 image_url as "imageUrl", created_at as "createdAt", updated_at as "updatedAt"`, [
+                 image_url as "imageUrl", is_published as "isPublished", 
+                 created_at as "createdAt", updated_at as "updatedAt"`, [
             input.eventId,
             input.name,
             JSON.stringify(input.layoutData),
-            input.imageUrl || null
+            input.imageUrl || null,
+            input.isPublished || false
         ]);
         const plan = result.rows[0];
         return {
@@ -228,6 +234,7 @@ class FloorPlanService {
             eventId: plan.eventId,
             name: plan.name,
             imageUrl: plan.imageUrl,
+            isPublished: plan.isPublished || false,
             layoutData: plan.layoutData,
             createdAt: plan.createdAt,
             updatedAt: plan.updatedAt
@@ -252,6 +259,10 @@ class FloorPlanService {
             updates.push(`image_url = $${paramCount++}`);
             values.push(input.imageUrl);
         }
+        if (input.isPublished !== undefined) {
+            updates.push(`is_published = $${paramCount++}`);
+            values.push(input.isPublished);
+        }
         if (updates.length === 0) {
             throw new Error('No fields to update');
         }
@@ -261,7 +272,8 @@ class FloorPlanService {
        SET ${updates.join(', ')}
        WHERE id = $${paramCount}
        RETURNING id, event_id as "eventId", name, layout_data as "layoutData", 
-                 image_url as "imageUrl", created_at as "createdAt", updated_at as "updatedAt"`, values);
+                 image_url as "imageUrl", is_published as "isPublished",
+                 created_at as "createdAt", updated_at as "updatedAt"`, values);
         if (result.rows.length === 0) {
             throw new Error('Floor plan not found');
         }
@@ -271,6 +283,7 @@ class FloorPlanService {
             eventId: plan.eventId,
             name: plan.name,
             imageUrl: plan.imageUrl,
+            isPublished: plan.isPublished || false,
             layoutData: plan.layoutData,
             createdAt: plan.createdAt,
             updatedAt: plan.updatedAt

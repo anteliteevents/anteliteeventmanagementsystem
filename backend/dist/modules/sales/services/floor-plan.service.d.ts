@@ -9,6 +9,7 @@ export interface FloorPlanData {
     name: string;
     svgContent?: string;
     imageUrl?: string;
+    isPublished?: boolean;
     layoutData: {
         gridWidth: number;
         gridHeight: number;
@@ -54,11 +55,13 @@ export interface CreateFloorPlanInput {
     name: string;
     layoutData: FloorPlanData['layoutData'];
     imageUrl?: string;
+    isPublished?: boolean;
 }
 export interface UpdateFloorPlanInput {
     name?: string;
     layoutData?: FloorPlanData['layoutData'];
     imageUrl?: string;
+    isPublished?: boolean;
 }
 declare class FloorPlanService {
     /**

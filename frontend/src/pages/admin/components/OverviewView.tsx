@@ -32,7 +32,7 @@ import {
   Line,
   CartesianGrid,
 } from 'recharts';
-import { CHART_COLORS, DASHBOARD_CONSTANTS } from '../../../../constants';
+import { CHART_COLORS, DASHBOARD_CONSTANTS } from '../../../constants';
 import SkeletonLoader from '../../../components/ui/SkeletonLoader';
 import '../../../components/ui/SkeletonLoader.css';
 

@@ -38,7 +38,8 @@ VALUES
   (uuid_generate_v4(), 'info@financehub.com', '$2b$10$rOzJqJqJqJqJqJqJqJqJqOqJqJqJqJqJqJqJqJqJqJqJqJq', 'Jessica', 'White', 'Finance Hub', '+1-555-0503', 'exhibitor', true, NOW(), NOW()),
   (uuid_generate_v4(), 'sales@healthcareplus.com', '$2b$10$rOzJqJqJqJqJqJqJqJqJqOqJqJqJqJqJqJqJqJqJqJqJqJq', 'Daniel', 'Harris', 'Healthcare Plus', '+1-555-0504', 'exhibitor', true, NOW(), NOW()),
   (uuid_generate_v4(), 'team@edutech.com', '$2b$10$rOzJqJqJqJqJqJqJqJqJqOqJqJqJqJqJqJqJqJqJqJqJqJq', 'Nicole', 'Clark', 'EduTech Solutions', '+1-555-0505', 'exhibitor', true, NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
+-- Avoid duplicate email conflicts when re-running seeds
+ON CONFLICT (email) DO NOTHING;
 
 -- ============================================
 -- EVENTS (More Events)

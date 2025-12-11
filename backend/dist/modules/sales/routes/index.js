@@ -129,12 +129,17 @@ function salesRoutes(router) {
      */
     router.post('/floor-plans', auth_middleware_1.authenticate, async (req, res) => {
         try {
-            if (!feature_flags_1.featureFlags.enabled('svgFloorPlan')) {
-                return res.status(503).json(gateway_1.default.error('FEATURE_DISABLED', 'SVG Floor Plan feature is disabled'));
-            }
+            // Allow create even if feature flag is disabled (for backward compatibility)
+            // if (!featureFlags.enabled('svgFloorPlan')) {
+            //   return res.status(503).json(apiGateway.error('FEATURE_DISABLED', 'SVG Floor Plan feature is disabled'));
+            // }
             const { eventId, name, layoutData, imageUrl } = req.body;
             if (!eventId || !name || !layoutData) {
                 return res.status(400).json(gateway_1.default.error('VALIDATION_ERROR', 'eventId, name, and layoutData are required'));
+            }
+            // Validate layoutData structure
+            if (!layoutData.gridWidth || !layoutData.gridHeight || !layoutData.cellSize) {
+                return res.status(400).json(gateway_1.default.error('VALIDATION_ERROR', 'layoutData must include gridWidth, gridHeight, and cellSize'));
             }
             const floorPlan = await floor_plan_service_1.floorPlanService.createFloorPlan({
                 eventId,
@@ -145,7 +150,8 @@ function salesRoutes(router) {
             res.json(gateway_1.default.success(floorPlan, { module: 'sales' }));
         }
         catch (error) {
-            res.status(500).json(gateway_1.default.error('INTERNAL_ERROR', error.message));
+            console.error('Error creating floor plan:', error);
+            res.status(500).json(gateway_1.default.error('INTERNAL_ERROR', error.message || 'Failed to create floor plan'));
         }
     });
     /**

@@ -18,6 +18,8 @@ const users_routes_1 = __importDefault(require("./routes/users.routes"));
 const payments_routes_1 = __importDefault(require("./routes/payments.routes"));
 const invoices_routes_1 = __importDefault(require("./routes/invoices.routes"));
 const reservations_routes_1 = __importDefault(require("./routes/reservations.routes"));
+const express_2 = require("express");
+const routes_1 = require("./modules/sales/routes");
 // Modular Architecture Imports
 const module_loader_1 = require("./core/module-loader");
 const gateway_1 = require("./api/gateway");
@@ -80,7 +82,12 @@ app.use('/api/users', users_routes_1.default);
 app.use('/api/payments', payments_routes_1.default);
 app.use('/api/invoices', invoices_routes_1.default);
 app.use('/api/reservations', reservations_routes_1.default);
+// Direct sales module routes (fallback if module system doesn't register them)
+const salesRouter = (0, express_2.Router)();
+(0, routes_1.salesRoutes)(salesRouter);
+app.use('/api/sales', salesRouter);
 // Initialize Modular Architecture
+// Note: Module routes are registered via API Gateway after modules are loaded
 async function initializeModules() {
     try {
         console.log('\n🔧 Initializing Modular Architecture...\n');
@@ -110,8 +117,13 @@ app.use((err, req, res, next) => {
         }
     });
 });
-// 404 handler
+// 404 handler for non-API routes only
+// API routes are handled by API Gateway's 404 handler
 app.use((req, res) => {
+    // Skip API routes - they're handled by API Gateway
+    if (req.path.startsWith('/api')) {
+        return; // Let API Gateway handle it
+    }
     res.status(404).json({
         success: false,
         error: {

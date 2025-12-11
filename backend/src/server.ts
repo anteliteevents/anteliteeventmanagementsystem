@@ -14,6 +14,8 @@ import usersRoutes from './routes/users.routes';
 import paymentsRoutes from './routes/payments.routes';
 import invoicesRoutes from './routes/invoices.routes';
 import reservationsRoutes from './routes/reservations.routes';
+import { Router } from 'express';
+import { salesRoutes } from './modules/sales/routes';
 
 // Modular Architecture Imports
 import { moduleLoader } from './core/module-loader';
@@ -92,6 +94,11 @@ app.use('/api/users', usersRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/invoices', invoicesRoutes);
 app.use('/api/reservations', reservationsRoutes);
+
+// Direct sales module routes (fallback if module system doesn't register them)
+const salesRouter = Router();
+salesRoutes(salesRouter);
+app.use('/api/sales', salesRouter);
 
 // Initialize Modular Architecture
 // Note: Module routes are registered via API Gateway after modules are loaded

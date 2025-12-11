@@ -35,6 +35,7 @@ class ApiGateway {
         modules.forEach((module, moduleName) => {
             // Check if module is enabled
             if (!feature_flags_1.featureFlags.enabled(moduleName)) {
+                console.log(`⚠️  Module ${moduleName} is disabled, skipping route registration`);
                 return;
             }
             if (module.routes) {
@@ -49,10 +50,27 @@ class ApiGateway {
                     // Mount router with prefix
                     this.app.use(modulePrefix, router);
                     console.log(`✅ Registered API routes for module: ${moduleName} at ${modulePrefix}/*`);
+                    // Log registered routes for debugging (only for sales module)
+                    if (moduleName === 'sales') {
+                        console.log(`   📋 Sales module routes:`);
+                        router.stack.forEach((r) => {
+                            if (r.route) {
+                                const methods = Object.keys(r.route.methods).join(',').toUpperCase();
+                                console.log(`      ${methods} ${modulePrefix}${r.route.path}`);
+                            }
+                            else if (r.name === 'router') {
+                                // Handle nested routers
+                                console.log(`      [Nested router at ${r.regexp}]`);
+                            }
+                        });
+                    }
                 }
                 catch (error) {
-                    console.error(`Error registering routes for ${moduleName}:`, error);
+                    console.error(`❌ Error registering routes for ${moduleName}:`, error);
                 }
+            }
+            else {
+                console.warn(`⚠️  Module ${moduleName} has no routes function`);
             }
         });
     }
@@ -62,15 +80,26 @@ class ApiGateway {
     setupErrorHandling() {
         if (!this.app)
             return;
-        // 404 handler for API routes
-        this.app.use(`${this.routePrefix}/*`, (req, res) => {
-            res.status(404).json({
-                success: false,
-                error: {
-                    code: 'NOT_FOUND',
-                    message: `API route not found: ${req.path}`
-                }
-            });
+        // 404 handler for API routes (must be last)
+        // This catches any API routes that weren't matched by module routes
+        this.app.use(`${this.routePrefix}/*`, (req, res, next) => {
+            // Only handle if it's actually an API route and not already handled
+            if (req.path.startsWith(this.routePrefix)) {
+                // Log the attempted route for debugging
+                console.warn(`⚠️  404 - API route not found: ${req.method} ${req.path}`);
+                console.warn(`   Available modules: ${Array.from(module_loader_1.moduleLoader.getModules().keys()).join(', ')}`);
+                console.warn(`   Registered routes for sales module should be at /api/sales/*`);
+                res.status(404).json({
+                    success: false,
+                    error: {
+                        code: 'NOT_FOUND',
+                        message: `API route not found: ${req.method} ${req.path}. Make sure the sales module is enabled and routes are registered.`
+                    }
+                });
+            }
+            else {
+                next(); // Pass to next handler if not an API route
+            }
         });
         // Global error handler
         this.app.use((err, req, res, next) => {

@@ -190,8 +190,8 @@ class FloorPlanService {
    */
   generateSVG(floorPlan: FloorPlanData, booths: any[]): string {
     const { layoutData } = floorPlan;
-    const svgWidth = (layoutData.gridWidth || layoutData.width || 20) * (layoutData.cellSize || 50);
-    const svgHeight = (layoutData.gridHeight || layoutData.height || 20) * (layoutData.cellSize || 50);
+    const svgWidth = (layoutData.gridWidth || 20) * (layoutData.cellSize || 50);
+    const svgHeight = (layoutData.gridHeight || 20) * (layoutData.cellSize || 50);
 
     let svg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">`;
     

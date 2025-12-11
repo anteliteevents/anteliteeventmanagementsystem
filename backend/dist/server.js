@@ -59,6 +59,9 @@ app.use('/api/webhooks', express_1.default.raw({ type: 'application/json' }), st
 // Parse JSON for all other routes
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
+// Serve static files (uploads)
+const path_1 = __importDefault(require("path"));
+app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({

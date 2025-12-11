@@ -20,6 +20,13 @@ const inferBrowserApiBase = () => {
 
 const API_URL = process.env.REACT_APP_API_URL || inferBrowserApiBase() || 'http://localhost:3001';
 
+// Debug logging (remove in production)
+if (typeof window !== 'undefined') {
+  console.log('🔗 API URL:', API_URL);
+  console.log('🔗 Full API Base:', `${API_URL}/api`);
+  console.log('🔗 REACT_APP_API_URL env:', process.env.REACT_APP_API_URL);
+}
+
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: `${API_URL}/api`,

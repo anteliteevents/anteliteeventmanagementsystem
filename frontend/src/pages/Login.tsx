@@ -23,6 +23,8 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError(null);
 
+    console.log('🔐 Login form submitted', { email: formData.email, hasPassword: !!formData.password });
+
     if (!formData.email || !formData.password) {
       setError('Please fill in all fields');
       return;
@@ -30,9 +32,12 @@ const Login: React.FC = () => {
 
     try {
       setLoading(true);
+      console.log('🚀 Calling AuthService.login...');
       await AuthService.login(formData.email, formData.password);
+      console.log('✅ Login successful, navigating to dashboard');
       navigate('/dashboard');
     } catch (err: any) {
+      console.error('❌ Login error:', err);
       setError(err.response?.data?.error?.message || err.message || 'Login failed');
     } finally {
       setLoading(false);

@@ -409,11 +409,6 @@ const PoliciesDepartmentView: React.FC<PoliciesDepartmentViewProps> = ({ data, l
           </div>
         </div>
       )}
-    </div>
-  );
-};
-
-export default PoliciesDepartmentView;
 
       <div className="sales-section enhanced-section">
         <h2>📂 Policy Categories</h2>

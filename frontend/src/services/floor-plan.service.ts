@@ -10,6 +10,21 @@ export interface FloorPlan {
     gridWidth: number;
     gridHeight: number;
     cellSize: number;
+    shapes?: Array<{
+      id: string;
+      type: 'rectangle' | 'circle' | 'polygon';
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      color?: string;
+      strokeColor?: string;
+      strokeWidth?: number;
+      boothId?: string;
+      boothNumber?: string;
+      label?: string;
+      metadata?: any;
+    }>;
     zones?: Array<{
       id: string;
       name: string;
@@ -119,6 +134,28 @@ class FloorPlanService {
     });
     if (!response.data.data) {
       throw new Error('Failed to duplicate floor plan');
+    }
+    return response.data.data;
+  }
+
+  /**
+   * Upload floor plan image
+   */
+  async uploadImage(file: File): Promise<{ filename: string; url: string; originalName: string; size: number }> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await api.post<ApiResponse<{ filename: string; url: string; originalName: string; size: number }>>(
+      '/sales/floor-plans/upload-image',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    if (!response.data.data) {
+      throw new Error('Failed to upload image');
     }
     return response.data.data;
   }

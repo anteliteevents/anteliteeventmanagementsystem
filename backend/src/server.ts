@@ -69,6 +69,10 @@ app.use('/api/webhooks', express.raw({ type: 'application/json' }), stripeWebhoo
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files (uploads)
+import path from 'path';
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 

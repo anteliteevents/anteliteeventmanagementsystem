@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ModularTest from './pages/ModularTest';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import FloorPlanEditorPage from './pages/admin/FloorPlanEditorPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthService from './services/auth.service';
 import './App.css';
@@ -71,6 +72,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/floor-plans/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <FloorPlanEditorPage />
                 </ProtectedRoute>
               }
             />

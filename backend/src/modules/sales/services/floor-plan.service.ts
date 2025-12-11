@@ -17,6 +17,21 @@ export interface FloorPlanData {
     gridWidth: number;
     gridHeight: number;
     cellSize: number;
+    shapes?: Array<{
+      id: string;
+      type: 'rectangle' | 'circle' | 'polygon';
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      color?: string;
+      strokeColor?: string;
+      strokeWidth?: number;
+      boothId?: string;
+      boothNumber?: string;
+      label?: string;
+      metadata?: any;
+    }>;
     zones?: Array<{
       id: string;
       name: string;

@@ -8,6 +8,7 @@ import { salesService } from '../services/sales.service';
 import { floorPlanService } from '../services/floor-plan.service';
 import { featureFlags } from '../../../core/feature-flags';
 import apiGateway from '../../../api/gateway';
+import { upload, getFileUrl } from '../../../config/upload';
 
 export function salesRoutes(router: Router): void {
   // Check if sales module is enabled
@@ -281,6 +282,37 @@ export function salesRoutes(router: Router): void {
       if (error.message === 'Floor plan not found') {
         return res.status(404).json(apiGateway.error('NOT_FOUND', error.message));
       }
+      res.status(500).json(apiGateway.error('INTERNAL_ERROR', error.message));
+    }
+  });
+
+  /**
+   * POST /api/sales/floor-plans/upload-image
+   * Upload floor plan background image
+   */
+  router.post('/floor-plans/upload-image', authenticate, upload.single('image'), async (req: Request, res: Response) => {
+    try {
+      if (!featureFlags.enabled('svgFloorPlan')) {
+        return res.status(503).json(apiGateway.error('FEATURE_DISABLED', 'SVG Floor Plan feature is disabled'));
+      }
+
+      if (!req.file) {
+        return res.status(400).json(apiGateway.error('VALIDATION_ERROR', 'No image file provided'));
+      }
+
+      const fileUrl = getFileUrl(req.file.filename);
+      
+      // Return full URL (adjust based on your server setup)
+      const baseUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 3001}`;
+      const fullUrl = `${baseUrl}${fileUrl}`;
+
+      res.json(apiGateway.success({
+        filename: req.file.filename,
+        url: fullUrl,
+        originalName: req.file.originalname,
+        size: req.file.size
+      }, { module: 'sales' }));
+    } catch (error: any) {
       res.status(500).json(apiGateway.error('INTERNAL_ERROR', error.message));
     }
   });

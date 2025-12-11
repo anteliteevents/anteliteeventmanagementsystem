@@ -239,8 +239,7 @@ const FloorPlanManagementView: React.FC = () => {
                     <button
                       className="btn-primary"
                       onClick={() => {
-                        // TODO: Open editor
-                        alert('Floor plan editor coming soon!');
+                        window.location.href = `/admin/floor-plans/${plan.id}/edit`;
                       }}
                     >
                       Open Editor

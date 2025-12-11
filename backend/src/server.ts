@@ -18,6 +18,7 @@ import { moduleLoader } from './core/module-loader';
 import { apiGateway } from './api/gateway';
 import { featureFlags } from './core/feature-flags';
 import { setupSalesWebSocket } from './modules/sales/websocket/handlers';
+import { defaultAllowedOrigins } from './config/customOrigins';
 
 // Load environment variables
 dotenv.config();
@@ -29,11 +30,7 @@ const httpServer = createServer(app);
 const io = setupSocketIO(httpServer);
 
 // Middleware
-const allowedOrigins = (process.env.CORS_ORIGIN || [
-  'http://localhost:3000',
-  'https://anteliteeventssystem-2s8af5wgz-anteliteevents-projects.vercel.app',
-  'https://anteliteeventssystem.vercel.app'
-].join(','))
+const allowedOrigins = (process.env.CORS_ORIGIN || defaultAllowedOrigins.join(','))
   .split(',')
   .map(o => o.trim())
   .filter(Boolean);

@@ -8,7 +8,11 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 const inferBrowserApiBase = () => {
   if (typeof window === 'undefined') return undefined;
   const host = window.location.hostname;
-  if (host.includes('vercel.app') || host.includes('anteliteeventssystem')) {
+  if (
+    host.includes('vercel.app') ||
+    host.includes('anteliteeventssystem') ||
+    host.endsWith('antelite.digital')
+  ) {
     return 'https://anteliteeventssystem.onrender.com';
   }
   return 'http://localhost:3001';

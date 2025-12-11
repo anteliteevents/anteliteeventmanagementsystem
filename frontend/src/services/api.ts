@@ -1,6 +1,20 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// Determine API base URL:
+// 1) Respect REACT_APP_API_URL if provided at build time.
+// 2) If running in browser without the env var, fall back based on host:
+//    - On Vercel/production: use the Render backend URL.
+//    - On localhost: use local API.
+const inferBrowserApiBase = () => {
+  if (typeof window === 'undefined') return undefined;
+  const host = window.location.hostname;
+  if (host.includes('vercel.app') || host.includes('anteliteeventssystem')) {
+    return 'https://anteliteeventssystem.onrender.com';
+  }
+  return 'http://localhost:3001';
+};
+
+const API_URL = process.env.REACT_APP_API_URL || inferBrowserApiBase() || 'http://localhost:3001';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({

@@ -476,7 +476,7 @@ const OverviewView: React.FC = () => {
     try {
       const [eventsRes, systemRes] = await Promise.all([
         api.get('/events'),
-        api.get('/health', { baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001' })
+        api.get('/health')
       ]);
 
       const eventsData = eventsRes.data || {};

@@ -37,6 +37,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'policies', label: '📋 Policies' },
     { id: 'events', label: '📅 Events Management' },
     { id: 'booths', label: '🏢 Booth Management' },
+    { id: 'floor-plans', label: '🗺️ Floor Plans' },
     { id: 'users', label: '👥 User Management' },
     { id: 'reports', label: '📈 Reports' },
     { id: 'settings', label: '⚙️ Settings' },

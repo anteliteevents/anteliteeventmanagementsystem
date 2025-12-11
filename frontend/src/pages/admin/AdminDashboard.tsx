@@ -29,6 +29,7 @@ import PoliciesDepartmentView from './components/PoliciesDepartmentView';
 import EventsManagementView from './EventsManagementView';
 import BoothsManagementView from './BoothsManagementView';
 import UsersManagementView from './UsersManagementView';
+import FloorPlanManagementView from './FloorPlanManagementView';
 import ReportsViewComponent from './ReportsView';
 import SettingsViewComponent from './SettingsView';
 import { API_TIMEOUTS, DASHBOARD_CONSTANTS } from '../../constants';
@@ -854,11 +855,12 @@ const AdminDashboard: React.FC = () => {
           )}
           {activeView === 'events' && <EventsManagementView />}
           {activeView === 'booths' && <BoothsManagementView />}
+          {activeView === 'floor-plans' && <FloorPlanManagementView />}
           {activeView === 'users' && <UsersManagementView />}
           {activeView === 'reports' && <ReportsViewComponent />}
           {activeView === 'settings' && <SettingsViewComponent />}
           {/* Placeholder for other views */}
-          {!['overview', 'sales', 'events', 'booths', 'users', 'reports', 'payments', 'costing', 'proposals', 'monitoring', 'policies', 'settings'].includes(activeView) && (
+          {!['overview', 'sales', 'events', 'booths', 'floor-plans', 'users', 'reports', 'payments', 'costing', 'proposals', 'monitoring', 'policies', 'settings'].includes(activeView) && (
             <div className="view-placeholder">
               <h2>Coming Soon!</h2>
               <p>This section is under development. Please check back later.</p>

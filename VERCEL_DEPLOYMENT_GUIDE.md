@@ -15,15 +15,18 @@
 In the project configuration screen:
 
 #### Framework Preset
-- **Framework Preset**: `Create React App` (or `Other`)
+- **Framework Preset**: `Create React App` (auto-detected)
 
 #### Root Directory
 - **Root Directory**: `frontend` ⚠️ **CRITICAL - Set this!**
+  - Click "Edit" next to Root Directory
+  - Enter: `frontend`
+  - This tells Vercel where your React app is located
 
-#### Build and Output Settings
-- **Build Command**: `npm run build` (or leave default)
-- **Output Directory**: `build` (or leave default)
-- **Install Command**: `npm install` (or leave default)
+#### Build and Output Settings (Auto-detected after setting Root Directory)
+- **Build Command**: `npm run build` (auto-detected)
+- **Output Directory**: `build` (auto-detected)
+- **Install Command**: `npm install` (auto-detected)
 
 ### 3. Environment Variables
 

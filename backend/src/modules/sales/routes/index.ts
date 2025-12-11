@@ -226,9 +226,10 @@ export function salesRoutes(router: Router): void {
    */
   router.put('/floor-plans/:id', authenticate, async (req: Request, res: Response) => {
     try {
-      if (!featureFlags.enabled('svgFloorPlan')) {
-        return res.status(503).json(apiGateway.error('FEATURE_DISABLED', 'SVG Floor Plan feature is disabled'));
-      }
+      // Allow update even if feature flag is disabled (for backward compatibility)
+      // if (!featureFlags.enabled('svgFloorPlan')) {
+      //   return res.status(503).json(apiGateway.error('FEATURE_DISABLED', 'SVG Floor Plan feature is disabled'));
+      // }
 
       const { name, layoutData, imageUrl } = req.body;
 
@@ -240,10 +241,11 @@ export function salesRoutes(router: Router): void {
 
       res.json(apiGateway.success(floorPlan, { module: 'sales' }));
     } catch (error: any) {
-      if (error.message === 'Floor plan not found') {
-        return res.status(404).json(apiGateway.error('NOT_FOUND', error.message));
+      if (error.message === 'Floor plan not found' || error.message?.includes('not found')) {
+        return res.status(404).json(apiGateway.error('NOT_FOUND', error.message || 'Floor plan not found'));
       }
-      res.status(500).json(apiGateway.error('INTERNAL_ERROR', error.message));
+      console.error('Error updating floor plan:', error);
+      res.status(500).json(apiGateway.error('INTERNAL_ERROR', error.message || 'Failed to update floor plan'));
     }
   });
 

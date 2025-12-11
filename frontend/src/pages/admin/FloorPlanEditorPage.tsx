@@ -110,18 +110,24 @@ const FloorPlanEditorPage: React.FC = () => {
 
     try {
       setSaving(true);
+      console.log('Saving floor plan:', id);
+      console.log('Shapes to save:', shapes.length);
+      
       const updatedLayoutData = {
         ...floorPlan!.layoutData,
         shapes: shapes
       };
 
-      await FloorPlanService.updateFloorPlan(id, {
+      const updated = await FloorPlanService.updateFloorPlan(id, {
         layoutData: updatedLayoutData
       });
-
-      alert('Floor plan saved successfully!');
+      
+      setFloorPlan(updated);
+      alert('✅ Floor plan saved successfully!');
     } catch (error: any) {
-      alert('Error saving floor plan: ' + error.message);
+      console.error('Save error:', error);
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Unknown error';
+      alert('❌ Error saving floor plan: ' + errorMessage);
     } finally {
       setSaving(false);
     }

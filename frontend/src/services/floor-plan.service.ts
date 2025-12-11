@@ -118,11 +118,17 @@ class FloorPlanService {
    * Update floor plan
    */
   async updateFloorPlan(id: string, input: UpdateFloorPlanInput): Promise<FloorPlan> {
-    const response = await api.put<ApiResponse<FloorPlan>>(`/sales/floor-plans/${id}`, input);
-    if (!response.data.data) {
-      throw new Error('Failed to update floor plan');
+    try {
+      const response = await api.put<ApiResponse<FloorPlan>>(`/sales/floor-plans/${id}`, input);
+      if (!response.data.data) {
+        throw new Error(response.data.error?.message || 'Failed to update floor plan');
+      }
+      return response.data.data;
+    } catch (error: any) {
+      // Provide better error message
+      const errorMessage = error?.response?.data?.error?.message || error?.message || 'Failed to update floor plan';
+      throw new Error(errorMessage);
     }
-    return response.data.data;
   }
 
   /**

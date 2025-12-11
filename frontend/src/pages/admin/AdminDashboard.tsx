@@ -78,13 +78,12 @@ const AdminDashboard: React.FC = () => {
       const token = AuthService.getStoredToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-      const [eventsRes, healthRes] = await Promise.all([
-        api.get('/events'),
-        api.get('/health'),
-      ]);
-
+      const eventsRes = await api.get('/events');
       const events = eventsRes.data?.data || [];
-      const health = healthRes.data || {};
+      
+      // Health check is at root level, not /api/health
+      const healthRes = await fetch(`${process.env.REACT_APP_API_URL || 'https://anteliteeventssystem.onrender.com'}/health`).catch(() => null);
+      const health = healthRes ? await healthRes.json().catch(() => ({})) : {};
 
       // Limit to first 6 events for quick dashboard rendering
       const targetEvents = events.slice(0, 6);
@@ -170,8 +169,10 @@ const AdminDashboard: React.FC = () => {
       };
 
       setOverviewData(overview);
+      setLoading(false); // ✅ Fix: Set loading to false when data is loaded
     } catch (error) {
       console.error('Error loading overview data:', error);
+      setLoading(false); // ✅ Fix: Set loading to false even on error
     } finally {
       setOverviewLoading(false);
     }
